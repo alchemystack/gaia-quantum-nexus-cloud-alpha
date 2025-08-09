@@ -1,0 +1,124 @@
+"""
+MODAL NOTEBOOK - GAIA QUANTUM NEXUS 120B ENHANCED
+==================================================
+Copy this entire code into Modal's web playground at:
+https://modal.com/playground
+
+Enhanced configuration with:
+- 1x A100 80GB VRAM GPU
+- 16 CPU cores
+- 128GB system RAM
+- Split cells for efficient model management
+
+This notebook is split into cells:
+Cell 1: Model upload from local storage
+Cell 2: Server initialization and endpoints
+"""
+
+# ============================================
+# CELL 1: MODEL UPLOAD AND PREPARATION
+# ============================================
+# Run this cell first to upload your GGUF model
+
+import modal
+import os
+import time
+import subprocess
+from typing import Dict, Any, Optional
+import json
+import asyncio
+import aiohttp
+
+# Create Modal app
+app = modal.App("gaia-quantum-120b-enhanced")
+
+# Model storage - persistent volume for the 120B model
+volume = modal.Volume.from_name("gaia-quantum-models-enhanced", create_if_missing=True)
+
+# Container image with llama.cpp server
+image = (
+    modal.Image.debian_slim(python_version="3.11")
+    .apt_install(
+        "wget", "git", "build-essential", "cmake", "curl",
+        "libssl-dev", "pkg-config", "libcurl4-openssl-dev"
+    )
+    .run_commands(
+        # Install llama.cpp with server support
+        "git clone https://github.com/ggerganov/llama.cpp /llama.cpp",
+        "cd /llama.cpp && make -j16 LLAMA_CUDA=1 llama-server",  # Use 16 cores
+        "ln -s /llama.cpp/llama-server /usr/local/bin/llama-server",
+    )
+    .pip_install(
+        "huggingface-hub",
+        "aiohttp",
+        "numpy",
+        "fastapi",
+        "requests",
+    )
+)
+
+@app.function(
+    image=image,
+    volumes={"/models": volume},
+    timeout=7200,  # 2 hours for model upload
+    cpu=16.0,      # 16 CPU cores
+    memory=131072, # 128GB RAM
+)
+def upload_model_from_local(model_path: Optional[str] = None):
+    """
+    Cell 1: Upload GGUF model from local storage or download from HuggingFace
+    
+    Run this first to prepare the model. Options:
+    1. Upload from your local file
+    2. Auto-download from HuggingFace
+    """
+    import shutil
+    from huggingface_hub import hf_hub_download
+    
+    print("🚀 CELL 1: MODEL PREPARATION")
+    print("=" * 60)
+    
+    model_dir = "/models/gpt-oss-120b"
+    os.makedirs(model_dir, exist_ok=True)
+    
+    # Check if model already exists
+    gguf_path = f"{model_dir}/gpt-oss-120b.gguf"
+    if os.path.exists(gguf_path):
+        size_gb = os.path.getsize(gguf_path) / (1024**3)
+        print(f"✅ Model already exists: {gguf_path}")
+        print(f"   Size: {size_gb:.2f} GB")
+        return {"status": "exists", "path": gguf_path, "size_gb": size_gb}
+    
+    if model_path and os.path.exists(model_path):
+        # Upload from local file
+        print(f"📤 Uploading model from: {model_path}")
+        shutil.copy2(model_path, gguf_path)
+        print("✅ Model uploaded successfully!")
+    else:
+        # Download from HuggingFace
+        print("📥 Downloading GPT-OSS 120B GGUF from HuggingFace...")
+        print("   Repository: ggml-org/gpt-oss-120b-GGUF")
+        print("   This will take 10-15 minutes...")
+        
+        try:
+            downloaded = hf_hub_download(
+                repo_id="ggml-org/gpt-oss-120b-GGUF",
+                filename="gpt-oss-120b.gguf",
+                local_dir=model_dir,
+                local_dir_use_symlinks=False
+            )
+            print(f"✅ Model downloaded to: {downloaded}")
+        except Exception as e:
+            print(f"⚠️ Download error: {e}")
+            print("   Using HuggingFace direct streaming instead")
+            return {"status": "use_hf_direct", "error": str(e)}
+    
+    # Verify model
+    if os.path.exists(gguf_path):
+        size_gb = os.path.getsize(gguf_path) / (1024**3)
+        print(f"\n✅ Model ready: {gguf_path}")
+        print(f"   Size: {size_gb:.2f} GB")
+        return {"status": "ready", "path": gguf_path, "size_gb": size_gb}
+    else:
+        return {"status": "error", "message": "Model file not found"}
+

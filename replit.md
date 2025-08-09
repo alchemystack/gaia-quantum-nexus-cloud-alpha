@@ -40,18 +40,25 @@ Preferred communication style: Simple, everyday language.
 - **Dual Output**: Shows both QRNG-modified text and vector interpretation
 - **Layer Analysis**: Real-time monitoring of attention, FFN, and embedding layers
 
-### Cloud Model Deployment (GPT-OSS 120B GGUF)
-- **Model**: ggml-org/gpt-oss-120b-GGUF from HuggingFace
-- **Model Link**: https://huggingface.co/ggml-org/gpt-oss-120b-GGUF
-- **Running Command**: `llama-server -hf ggml-org/gpt-oss-120b-GGUF -c 8192 -fa --jinja --reasoning-format none -t 16`
-- **GPU Requirements**: 1x A100 with 80GB VRAM (enhanced from 64GB)
+### Cloud Model Deployment (OpenAI GPT-OSS 120B)
+- **Model**: OpenAI GPT-OSS 120B (official release from OpenAI)
+- **Model Source**: lmstudio-community/gpt-oss-120b-GGUF (split MXFP4 files)
+- **Model Stats**: 117B parameters total, 5.1B active parameters
+- **Quantization**: MXFP4 optimized for GPU inference
+- **License**: Apache 2.0 with harmony response format
+- **Running Command**: `llama-server -m gpt-oss-120b-MXFP4-00001-of-00002.gguf -c 8192 -fa --jinja --reasoning-format none -t 16 -ngl 999`
+- **GPU Requirements**: 1x A100 with 80GB VRAM (MXFP4 optimized)
 - **System Resources**: 128GB RAM, 16 CPU cores (enhanced configuration)
 - **Deployment Scripts**: 
-  - `MODAL_NOTEBOOK_ENHANCED.py` - Cell-based deployment with local upload support
+  - `MODAL_NOTEBOOK_ENHANCED.py` - Cell-based deployment with local upload support (handles split GGUF files)
   - `MODAL_WEB_NOTEBOOK.py` - Original single-script deployment
+  - `CONNECT_MODAL_AUTO.py` - Automated connection script for Modal endpoints
+- **Local Files**: D:.cashe\lm-studio\models\lmstudio-community\gpt-oss-120b-GGUF\
+  - Part 1: gpt-oss-120b-MXFP4-00001-of-00002.gguf
+  - Part 2: gpt-oss-120b-MXFP4-00002-of-00002.gguf
 - **Integration**: ModalLLMEngine in `server/services/modal-llm-engine.ts`
 - **Low-Latency Setup**: Model stays loaded (keep_warm=1), Flash Attention enabled, 16 CPU threads
-- **Cost Optimization**: Enhanced config ~$95-120/month, Original ~$60/month
+- **Cost Optimization**: Enhanced config ~$95-120/month for 24/7 availability
 
 ### Authentication & Authorization
 - **Current State**: No authentication implemented (demo mode)

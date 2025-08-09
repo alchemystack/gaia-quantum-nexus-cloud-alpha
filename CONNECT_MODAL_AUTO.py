@@ -44,8 +44,10 @@ MODAL_API_KEY=ak-4jAZeEPxVf7YMT0MYey2dw
     return True
 
 def main():
-    print("🌌 GAIA QUANTUM NEXUS - AUTOMATIC MODAL CONNECTOR")
+    print("🌌 GAIA QUANTUM NEXUS - OPENAI GPT-OSS 120B CONNECTOR")
     print("=" * 60)
+    print("Model: OpenAI GPT-OSS 120B (117B params, 5.1B active)")
+    print("Format: MXFP4 quantized for 80GB GPU")
     print("\n📡 Scanning for your Modal deployment...")
     print("   Notebook: https://modal.com/notebooks/alchemystack/_/nb-j0cr4flsN8Eldy7y3ZFCBv")
     print("\n" + "=" * 60)
