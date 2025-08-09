@@ -119,7 +119,7 @@ QRNG_API_KEY=your-quantum-blockchains-key
 ### Modal App Configuration
 ```python
 app = modal.App("qgpt")  # Short name for short URLs
-gpu_config = modal.gpu.A100(count=1, size="80GB")
+gpu_config = modal.gpu.A100_80GB()
 memory = 131072  # 128GB RAM
 cpu = 16  # 16 cores
 ```

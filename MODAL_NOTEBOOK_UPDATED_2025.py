@@ -23,7 +23,7 @@ import json
 app = modal.App("qgpt")  # SHORT NAME = SHORT URLS
 
 # GPU configuration for transformers (8-bit quantization)
-gpu_config = modal.gpu.A100(count=1, size="80GB")
+gpu_config = modal.gpu.A100_80GB()
 
 # Image with all dependencies pre-installed
 image = (
@@ -36,6 +36,7 @@ image = (
         "sentencepiece==0.1.99",
         "numpy==1.26.3",
         "requests==2.31.0",
+        "fastapi[standard]",  # Ensures FastAPI is available for web endpoints
         gpu=gpu_config  # Install CUDA versions
     )
 )
