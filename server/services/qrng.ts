@@ -20,12 +20,20 @@ export class QuantumBlockchainsQRNG implements QRNGProvider {
     this.apiKey = process.env.QBCK_API_KEY || process.env.QRNG_API_KEY || '';
     if (!this.apiKey) {
       console.warn('QRNG API key not found in environment variables. Quantum generation will be unavailable.');
+    } else if (!this.validateApiKey(this.apiKey)) {
+      console.warn('Invalid QRNG API key format. Key should be >10 characters and contain a dash.');
+      this.apiKey = '';
     }
     
     // Start entropy pooling if API key is available
     if (this.apiKey) {
+      console.log('QRNG service initialized with Quantum Blockchains API');
       this.startEntropyPooling();
     }
+  }
+
+  private validateApiKey(apiKey: string): boolean {
+    return Boolean(apiKey && apiKey.length > 10 && apiKey.includes("-"));
   }
 
   private async makeRequest(endpoint: string): Promise<any> {
@@ -52,13 +60,14 @@ export class QuantumBlockchainsQRNG implements QRNGProvider {
         res.on('end', () => {
           try {
             const result = JSON.parse(data);
-            if (result.error === 'OK') {
-              resolve(result.data);
+            // Handle success response based on status code or result structure
+            if (res.statusCode === 200 || result.error === 'OK' || result.result) {
+              resolve(result);
             } else {
-              reject(new Error(`QRNG API Error: ${result.message}`));
+              reject(new Error(`QRNG API Error: ${result.message || result.error || 'Unknown error'}`));
             }
           } catch (e) {
-            reject(new Error('Invalid JSON response from QRNG API'));
+            reject(new Error(`Invalid JSON response from QRNG API: ${data.substring(0, 200)}`));
           }
         });
       });
@@ -80,12 +89,18 @@ export class QuantumBlockchainsQRNG implements QRNGProvider {
       try {
         if (this.entropyPool.length < this.poolSize / 4) {
           // Request binary data for pooling
-          const endpoint = `/${this.apiKey}/qbck/block/hex?size=50&length=32`;
+          const endpoint = `/${this.apiKey}/qbck/block/bin?size=10&length=256`; // 256 bits = 32 bytes each
           const response = await this.makeRequest(endpoint);
           
           if (response.result && Array.isArray(response.result)) {
-            response.result.forEach((hex: string) => {
-              const buffer = Buffer.from(hex, 'hex');
+            response.result.forEach((binaryString: string) => {
+              // Convert binary string to buffer
+              const bytes: number[] = [];
+              for (let i = 0; i < binaryString.length; i += 8) {
+                const byte = binaryString.slice(i, i + 8);
+                bytes.push(parseInt(byte, 2));
+              }
+              const buffer = Buffer.from(bytes);
               this.entropyPool.push(buffer);
             });
           }
@@ -121,11 +136,19 @@ export class QuantumBlockchainsQRNG implements QRNGProvider {
     const pooled = this.getPooledBytes(length);
     if (pooled) return pooled;
 
-    const endpoint = `/${this.apiKey}/qbck/block/hex?size=1&length=${length}`;
+    // Use binary format for byte generation - request binary strings and convert
+    const endpoint = `/${this.apiKey}/qbck/block/bin?size=1&length=${length * 8}`; // 8 bits per byte
     const response = await this.makeRequest(endpoint);
     
     if (response.result && response.result[0]) {
-      return Buffer.from(response.result[0], 'hex');
+      // Convert binary string to buffer
+      const binaryString = response.result[0];
+      const bytes: number[] = [];
+      for (let i = 0; i < binaryString.length; i += 8) {
+        const byte = binaryString.slice(i, i + 8);
+        bytes.push(parseInt(byte, 2));
+      }
+      return Buffer.from(bytes);
     }
     
     throw new Error('No quantum data received from QRNG API - true randomness required');
