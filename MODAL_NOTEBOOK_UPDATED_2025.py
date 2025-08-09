@@ -23,7 +23,7 @@ import json
 app = modal.App("qgpt")  # SHORT NAME = SHORT URLS
 
 # GPU configuration for transformers (8-bit quantization)
-gpu_config = modal.gpu.A100-80GB()
+gpu_config = modal.gpu.A100(memory=80)
 
 # Image with all dependencies pre-installed
 image = (
