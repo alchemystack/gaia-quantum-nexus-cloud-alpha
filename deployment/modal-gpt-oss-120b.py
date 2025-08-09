@@ -34,9 +34,17 @@ gpt_image = (
     )
 )
 
-# Model configuration
+# Model configuration - Using exact HuggingFace model specified
 MODEL_ID = "bartowski/openai_gpt-oss-120b-GGUF-MXFP4-Experimental"
-MODEL_FILE = "openai_gpt-oss-120b-Q4_K_M.gguf"  # Or whichever quantization you prefer
+MODEL_URL = "https://huggingface.co/bartowski/openai_gpt-oss-120b-GGUF-MXFP4-Experimental"
+
+# Choose quantization based on available memory:
+# - Q2_K.gguf (~40GB) - Lowest quality, fastest
+# - Q3_K_S.gguf (~50GB) - Better quality
+# - Q4_K_M.gguf (~65GB) - Recommended balance
+# - Q5_K_M.gguf (~80GB) - High quality
+# - Q6_K.gguf (~95GB) - Very high quality
+MODEL_FILE = "openai_gpt-oss-120b-Q4_K_M.gguf"
 
 @stub.cls(
     gpu=gpu.A100(memory=80),  # Request A100 80GB for the 120B model
