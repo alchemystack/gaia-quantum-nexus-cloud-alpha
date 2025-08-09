@@ -197,4 +197,20 @@ export class ModalLLMEngine {
     
     return configured;
   }
+
+  /**
+   * Get QRNG status
+   */
+  async getQRNGStatus() {
+    const isAvailable = await this.qrng.isAvailable();
+    const poolStatus = (this.qrng as any).getEntropyPoolStatus 
+      ? (this.qrng as any).getEntropyPoolStatus()
+      : { size: 0, percentage: 0 };
+    
+    return {
+      available: isAvailable,
+      provider: 'Quantum Blockchains',
+      entropyPool: poolStatus
+    };
+  }
 }
