@@ -40,12 +40,15 @@ Preferred communication style: Simple, everyday language.
 - **Dual Output**: Shows both QRNG-modified text and vector interpretation
 - **Layer Analysis**: Real-time monitoring of attention, FFN, and embedding layers
 
-### Cloud Model Deployment (GPT-OSS 120B)
-- **Model**: bartowski/openai_gpt-oss-120b-GGUF-MXFP4-Experimental (60-80GB VRAM required)
-- **Deployment Scripts**: Modal serverless deployment in `deployment/modal-gpt-oss-120b.py`
-- **Integration**: CloudModelManager in `server/services/cloud-model-providers.ts`
-- **Low-Latency Setup**: Pre-fetching QRNG data, geographic proximity optimization
-- **Cost Optimization**: Modal recommended at ~$95/month for light usage vs $24k/month for dedicated
+### Cloud Model Deployment (GPT-OSS 120B GGUF)
+- **Model**: ggml-org/gpt-oss-120b-GGUF from HuggingFace
+- **Model Link**: https://huggingface.co/ggml-org/gpt-oss-120b-GGUF
+- **Running Command**: `llama-server -hf ggml-org/gpt-oss-120b-GGUF -c 0 -fa --jinja --reasoning-format none`
+- **GPU Requirements**: 1x A100 with 64GB RAM
+- **Deployment Scripts**: Modal serverless deployment in `MODAL_WEB_NOTEBOOK.py`
+- **Integration**: ModalLLMEngine in `server/services/modal-llm-engine.ts`
+- **Low-Latency Setup**: Model stays loaded (keep_warm=1), Flash Attention enabled
+- **Cost Optimization**: Modal at ~$60/month for light usage with 1 GPU vs 2 GPUs
 
 ### Authentication & Authorization
 - **Current State**: No authentication implemented (demo mode)
