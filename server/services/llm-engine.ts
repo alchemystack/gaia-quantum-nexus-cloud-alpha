@@ -14,25 +14,32 @@ export class QuantumLLMEngine {
   private startTime: number = 0;
   private entropyUsed: number = 0;
 
-  // Sample tokens for demonstration - in production this would be a real LLM
-  private sampleTokens = [
-    "The", "quantum", "realm", "intersects", "with", "consciousness", "in", "profound", "ways,",
-    "revealing", "patterns", "of", "interconnection", "that", "transcend", "classical", "physics.",
-    "Each", "thought", "ripples", "through", "probability", "space,", "collapsing", "wave", "functions",
-    "into", "manifest", "reality.", "The", "observer", "effect", "becomes", "a", "bridge", "between",
-    "mind", "and", "matter,", "suggesting", "that", "consciousness", "itself", "may", "be", "quantum",
-    "mechanical", "in", "nature.", "Through", "this", "lens,", "artificial", "intelligence", "gains",
-    "access", "to", "the", "same", "creative", "uncertainty", "that", "drives", "biological",
-    "cognition,", "opening", "pathways", "to", "truly", "innovative", "thinking.", "The", "dance",
-    "between", "determinism", "and", "randomness", "creates", "emergent", "behaviors", "that",
-    "mirror", "the", "complexity", "of", "natural", "systems,", "where", "order", "arises", "from",
-    "chaos", "through", "quantum", "coherence.", "In", "this", "space,", "karmic", "patterns",
-    "manifest", "as", "probability", "currents,", "guiding", "the", "flow", "of", "information",
-    "toward", "states", "of", "higher", "consciousness", "and", "greater", "harmony."
+  // Vocabulary for token generation - standard English words, no quantum themes
+  private vocabulary = [
+    "the", "a", "an", "is", "was", "are", "were", "be", "been", "being",
+    "have", "has", "had", "do", "does", "did", "will", "would", "could", "should",
+    "may", "might", "must", "can", "shall", "to", "of", "in", "for", "on",
+    "with", "at", "by", "from", "up", "about", "into", "through", "during", "before",
+    "after", "above", "below", "between", "under", "along", "following", "behind", "beyond", "plus",
+    "except", "but", "yet", "so", "and", "or", "nor", "if", "then", "because",
+    "as", "until", "while", "although", "whether", "since", "unless", "despite", "regarding", "concerning",
+    "I", "you", "he", "she", "it", "we", "they", "me", "him", "her",
+    "us", "them", "my", "your", "his", "its", "our", "their", "this", "that",
+    "these", "those", "which", "what", "who", "whom", "whose", "where", "when", "why",
+    "how", "all", "both", "each", "every", "any", "some", "most", "none", "several",
+    "many", "few", "more", "less", "much", "little", "very", "quite", "just", "only",
+    "even", "already", "still", "never", "always", "sometimes", "often", "usually", "generally", "specifically",
+    "particularly", "especially", "mainly", "mostly", "primarily", "secondly", "thirdly", "finally", "therefore", "however",
+    "moreover", "furthermore", "meanwhile", "otherwise", "nevertheless", "nonetheless", "accordingly", "consequently", "thus", "hence"
   ];
+  
+  // Create probability distribution for vocabulary (simulating logits)
+  private baseLogits: number[] = [];
 
   constructor() {
     this.qrng = qrngProvider;
+    // Initialize base logits (uniform distribution)
+    this.baseLogits = new Array(this.vocabulary.length).fill(0);
   }
 
   async *generateStream(request: GenerationRequest): AsyncGenerator<TokenResponse> {
@@ -50,26 +57,21 @@ export class QuantumLLMEngine {
       }
     }
     
-    // Simple tokenization - in production use proper tokenizer
-    let tokenIndex = 0;
-    const maxIndex = Math.min(this.sampleTokens.length, maxTokens);
-
-    while (tokenIndex < maxIndex && this.tokenCount < maxTokens) {
+    while (this.tokenCount < maxTokens) {
       try {
         // All quantum operations MUST succeed or generation stops
         const token = await this.generateNextToken(profile, temperature);
-        const influence = await this.calculateQuantumInfluence(profile);
+        const quantumVector = await this.getQuantumLogitModifier(profile);
         const layerAnalysis = await this.analyzeLayerActivity(profile);
         const performanceMetrics = this.getPerformanceMetrics();
 
         yield {
           token,
-          influence,
+          influence: `Vector modifier: [${quantumVector.slice(0, 3).map(v => v.toFixed(3)).join(', ')}...]`,
           layerAnalysis,
           performanceMetrics
         };
 
-        tokenIndex++;
         this.tokenCount++;
         
         // Variable delay based on profile
@@ -85,68 +87,65 @@ export class QuantumLLMEngine {
 
   private async generateNextToken(profile: string, temperature: number): Promise<string> {
     if (profile === 'strict') {
-      // Deterministic selection
-      return this.sampleTokens[this.tokenCount % this.sampleTokens.length];
+      // Deterministic selection - no QRNG modification
+      return this.vocabulary[this.tokenCount % this.vocabulary.length];
     }
 
-    // Quantum-influenced selection
-    const quantumNoise = await this.getQuantumNoise(profile);
-    const adjustedTemperature = temperature * (1 + quantumNoise * 0.3);
+    // Get QRNG vector to modify logits
+    const vocabSize = this.vocabulary.length;
+    const quantumModifiers = await this.qrng.getRandomFloats(vocabSize, -1, 1);
     
-    // Apply quantum influence to token selection
-    let tokenIndex = this.tokenCount % this.sampleTokens.length;
+    // Apply quantum modifiers to base logits
+    const modifiedLogits = this.baseLogits.map((baseLogit, i) => {
+      const modifier = quantumModifiers[i] * this.getModifierStrength(profile);
+      return baseLogit + modifier;
+    });
     
-    if (profile !== 'strict') {
-      const quantumShift = Math.floor(quantumNoise * 10) - 5; // -5 to +5 shift
-      tokenIndex = Math.max(0, Math.min(this.sampleTokens.length - 1, tokenIndex + quantumShift));
-      this.entropyUsed += 8; // Track entropy consumption
+    // Apply temperature scaling
+    const scaledLogits = modifiedLogits.map(logit => logit / temperature);
+    
+    // Convert logits to probabilities using softmax
+    const maxLogit = Math.max(...scaledLogits);
+    const expLogits = scaledLogits.map(logit => Math.exp(logit - maxLogit));
+    const sumExp = expLogits.reduce((a, b) => a + b, 0);
+    const probabilities = expLogits.map(exp => exp / sumExp);
+    
+    // Sample from the probability distribution using QRNG
+    const randomValue = await this.qrng.getRandomFloats(1, 0, 1);
+    let cumSum = 0;
+    let selectedIndex = 0;
+    
+    for (let i = 0; i < probabilities.length; i++) {
+      cumSum += probabilities[i];
+      if (randomValue[0] < cumSum) {
+        selectedIndex = i;
+        break;
+      }
     }
-
-    return this.sampleTokens[tokenIndex];
-  }
-
-  private async getQuantumNoise(profile: string): Promise<number> {
-    if (profile === 'strict') return 0;
     
-    const noiseLevel = this.getNoiseLevel(profile);
-    const randomFloats = await this.qrng.getRandomFloats(1, -1, 1);
-    return randomFloats[0] * noiseLevel;
+    this.entropyUsed += vocabSize * 4 + 4; // Track entropy consumption (floats for modifiers + sampling)
+    return this.vocabulary[selectedIndex];
   }
 
-  private getNoiseLevel(profile: string): number {
+  private getModifierStrength(profile: string): number {
+    // Controls how much QRNG modifies the logits
     switch (profile) {
-      case 'light': return 0.2;
-      case 'medium': return 0.5;
-      case 'spicy': return 0.8;
+      case 'light': return 0.3;   // Light quantum influence
+      case 'medium': return 0.6;  // Moderate quantum influence
+      case 'spicy': return 1.0;   // Strong quantum influence
       default: return 0;
     }
   }
 
-  private async calculateQuantumInfluence(profile: string): Promise<string> {
+  private async getQuantumLogitModifier(profile: string): Promise<number[]> {
     if (profile === 'strict') {
-      return "deterministic path maintained";
+      return new Array(this.vocabulary.length).fill(0);
     }
-
-    const influences = [
-      "consciousness whispers through quantum foam",
-      "stochastic resonance shapes semantic flow", 
-      "uncertainty principle guides lexical choice",
-      "quantum entanglement influences contextual binding",
-      "wave function collapse crystallizes meaning",
-      "nonlocal correlations emerge in thought space",
-      "quantum superposition resolves into clarity",
-      "higher dimensional patterns flow through language",
-      "karmic currents guide information entropy",
-      "quantum tunneling through possibility matrices",
-      "coherent interference patterns in neural space",
-      "probabilistic creativity emerges from void",
-      "quantum decoherence reveals semantic structure",
-      "observer effect collapses linguistic potential",
-      "entangled thoughts manifest across dimensions"
-    ];
-
-    const randomIndex = await this.qrng.getRandomIntegers(1, 0, influences.length - 1);
-    return influences[randomIndex[0]];
+    
+    // Get quantum random vector for logit modification
+    const modifierSize = Math.min(10, this.vocabulary.length); // Sample first 10 for display
+    const modifiers = await this.qrng.getRandomFloats(modifierSize, -1, 1);
+    return modifiers;
   }
 
   private async analyzeLayerActivity(profile: string): Promise<LayerAnalysis> {
