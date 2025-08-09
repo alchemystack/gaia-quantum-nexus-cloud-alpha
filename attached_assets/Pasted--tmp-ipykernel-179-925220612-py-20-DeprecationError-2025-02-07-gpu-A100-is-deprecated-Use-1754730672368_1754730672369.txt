@@ -1,0 +1,52 @@
+/tmp/ipykernel_179/925220612.py:20: DeprecationError: 2025-02-07: `gpu=A100(...)` is deprecated. Use `gpu="A100-40GB"` instead.
+  gpu_config = modal.gpu.A100(count=1)
+/tmp/ipykernel_179/925220612.py:195: DeprecationError: 2025-02-24: We have renamed several parameters related to autoscaling. Please update your code to use the following new names:
+
+- keep_warm -> min_containers
+
+See https://modal.com/docs/guide/modal-1-0-migration for more details.
+  @app.cls(
+/tmp/ipykernel_179/925220612.py:195: DeprecationError: 2025-04-09: The `allow_concurrent_inputs` parameter is deprecated. Please use the `@modal.concurrent` decorator instead.
+
+See https://modal.com/docs/guide/modal-1-0-migration for more information.
+  @app.cls(
+---------------------------------------------------------------------------
+NameError                                 Traceback (most recent call last)
+Cell In[3], line 208
+    189         return {"status": "error", "message": str(e)}
+    192 # ============================================
+    193 # QUANTUM-ENHANCED GPT MODEL (Optimized)
+    194 # ============================================
+    195 @app.cls(
+    196     image=image,
+    197     gpu=gpu_config,
+    198     volumes={"/cache": model_volume},
+    199     timeout=3600,
+    200     keep_warm=1,  # KEEPS CONTAINER WARM - NO COLD STARTS
+    201     memory=131072,
+    202     cpu=16.0,
+    203     allow_concurrent_inputs=5,
+    204     secrets=[
+    205         modal.Secret.from_name("qrng-api-key"),
+    206     ],
+    207 )
+--> 208 class QuantumGPT120BTransformers:
+    209     """
+    210     OpenAI GPT-OSS 120B with Direct Logit Modification via QRNG
+    211     OPTIMIZED: Model weights persist in volume across kernel resets
+    212     """
+    214     def __init__(self):
+
+Cell In[3], line 301, in QuantumGPT120BTransformers()
+    297         del self.tokenizer
+    298     torch.cuda.empty_cache()
+    300 def apply_quantum_modification(
+--> 301     self, logits: torch.Tensor, quantum_profile: str = "medium", temperature: float = 1.0
+    302 ) -> Tuple[torch.Tensor, Dict[str, float]]:
+    303     """
+    304     Apply QRNG modification directly to logits
+    305     Returns modified logits and diagnostics
+    306     """
+    307     import torch
+
+NameError: name 'torch' is not defined

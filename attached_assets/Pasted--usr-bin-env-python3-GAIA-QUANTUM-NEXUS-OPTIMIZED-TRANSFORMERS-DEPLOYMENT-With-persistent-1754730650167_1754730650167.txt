@@ -9,21 +9,15 @@ import os
 import time
 import json
 import numpy as np
-from typing import Dict, Any, Optional, List, Tuple, TYPE_CHECKING
+from typing import Dict, Any, Optional, List, Tuple
 import asyncio
 from pathlib import Path
-
-# Import torch at module level for type hints
-if TYPE_CHECKING:
-    import torch
-else:
-    torch = None  # Will be imported inside Modal container
 
 # Create Modal app
 app = modal.App("gaia-quantum-transformers-optimized")
 
-# GPU configuration - A100 80GB for 120B model (UPDATED TO NEW SYNTAX)
-gpu_config = "A100-80GB"  # Updated from modal.gpu.A100(count=1)
+# GPU configuration - A100 80GB for 120B model
+gpu_config = modal.gpu.A100(count=1)
 
 # PERSISTENT MODEL STORAGE VOLUME
 # This volume persists across kernel resets and deployments
@@ -208,14 +202,13 @@ def download_model_if_needed():
     gpu=gpu_config,
     volumes={"/cache": model_volume},
     timeout=3600,
-    min_containers=1,  # KEEPS CONTAINER WARM - NO COLD STARTS (updated from keep_warm)
+    keep_warm=1,  # KEEPS CONTAINER WARM - NO COLD STARTS
     memory=131072,
     cpu=16.0,
-    concurrency_limit=5,  # Updated from allow_concurrent_inputs
+    allow_concurrent_inputs=5,
     secrets=[
         modal.Secret.from_name("qrng-api-key"),
-    ]
-)
+    ])
 class QuantumGPT120BTransformers:
     """
     OpenAI GPT-OSS 120B with Direct Logit Modification via QRNG
@@ -313,9 +306,9 @@ class QuantumGPT120BTransformers:
 
     def apply_quantum_modification(
             self,
-            logits: "torch.Tensor",  # Using string type hint to avoid import issues
+            logits: torch.Tensor,
             quantum_profile: str = "medium",
-            temperature: float = 1.0) -> Tuple["torch.Tensor", Dict[str, float]]:
+            temperature: float = 1.0) -> Tuple[torch.Tensor, Dict[str, float]]:
         """
         Apply QRNG modification directly to logits
         Returns modified logits and diagnostics
