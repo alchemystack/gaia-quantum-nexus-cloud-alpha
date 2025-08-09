@@ -1,22 +1,17 @@
 """
-MODAL NOTEBOOK - OpenAI GPT-OSS 120B ENHANCED
-==============================================
+MODAL NOTEBOOK - GAIA QUANTUM NEXUS 120B ENHANCED
+==================================================
 Copy this entire code into Modal's web playground at:
 https://modal.com/playground
 
-Model: openai/gpt-oss-120b (117B parameters, 5.1B active)
-- Native MXFP4 quantization for single 80GB GPU deployment
-- Harmony response format required
-- Split into two GGUF files
-
-Enhanced configuration:
-- 1x A100 80GB VRAM GPU (H100 or AMD MI300X compatible)
+Enhanced configuration with:
+- 1x A100 80GB VRAM GPU
 - 16 CPU cores
 - 128GB system RAM
 - Split cells for efficient model management
 
 This notebook is split into cells:
-Cell 1: Model upload from local storage (two-part GGUF)
+Cell 1: Model upload from local storage
 Cell 2: Server initialization and endpoints
 """
 
