@@ -34,9 +34,9 @@ gpt_image = (
     )
 )
 
-# Model configuration
+# Model configuration - Using MXFP4 quantization for optimal performance
 MODEL_ID = "bartowski/openai_gpt-oss-120b-GGUF-MXFP4-Experimental"
-MODEL_FILE = "openai_gpt-oss-120b-Q4_K_M.gguf"  # Or whichever quantization you prefer
+MODEL_FILE = "openai_gpt-oss-120b-MXFP4.gguf"  # MXFP4 quantization for A100 80GB
 
 @stub.cls(
     gpu=gpu.A100(memory=80),  # Request A100 80GB for the 120B model

@@ -266,6 +266,10 @@ export default function QuantumInterface() {
               </div>
             </div>
             <div className="flex items-center space-x-4">
+              <div className="text-sm text-muted-foreground flex items-center" data-testid="model-engine-status">
+                <div className={`w-2 h-2 rounded-full mr-2 ${(qrngStatus as any)?.modelEngine === 'Modal GPT-OSS 120B' ? 'bg-purple-500 animate-pulse' : 'bg-yellow-500'}`} />
+                {(qrngStatus as any)?.modelEngine || 'Unknown Model'}
+              </div>
               <div className="text-sm text-muted-foreground flex items-center" data-testid="qrng-status-header">
                 <div className={`w-2 h-2 rounded-full mr-2 ${qrngStatus?.available ? 'bg-quantum-green animate-pulse' : 'bg-red-500'}`} />
                 QRNG {qrngStatus?.available ? 'Active' : 'Offline'}
@@ -482,12 +486,7 @@ export default function QuantumInterface() {
                   </div>
                 </div>
                 
-                {/* Model Limitation Notice */}
-                <div className="mt-4 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
-                  <p className="text-xs text-yellow-500">
-                    <strong>Note:</strong> This is a demonstration system. Loading a real 120B parameter model requires 240-480GB GPU memory (4-8 A100 GPUs), which is not available in Replit. The system uses a vocabulary-based demonstration to show how QRNG logit modification would work.
-                  </p>
-                </div>
+
               </CardContent>
             </Card>
           </div>

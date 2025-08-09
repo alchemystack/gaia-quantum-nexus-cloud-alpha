@@ -3,17 +3,36 @@ import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { llmEngine } from "./services/llm-engine";
+import { ModalLLMEngine } from "./services/modal-llm-engine";
+import { QuantumBlockchainsQRNG } from "./services/qrng";
 import { influenceTranslator } from "./services/influence-translator";
 import { generationRequestSchema, type TokenResponse } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
+  
+  // Initialize the appropriate LLM engine based on configuration
+  const qrng = new QuantumBlockchainsQRNG();
+  const modalEngine = new ModalLLMEngine(qrng);
+  const isModalConfigured = await modalEngine.isConfigured();
+  
+  // Use Modal-hosted GPT-OSS 120B if configured, otherwise use local demo
+  const activeEngine = isModalConfigured ? modalEngine : llmEngine;
+  
+  if (isModalConfigured) {
+    console.log('[Routes] Using Modal-hosted GPT-OSS 120B model with QRNG logit modification');
+  } else {
+    console.log('[Routes] Modal not configured. Set MODAL_ENDPOINT and MODAL_API_KEY to use the real 120B model');
+  }
 
   // REST API routes
   app.get("/api/qrng-status", async (req, res) => {
     try {
-      const status = await llmEngine.getQRNGStatus();
-      res.json(status);
+      const status = await activeEngine.getQRNGStatus();
+      res.json({
+        ...status,
+        modelEngine: isModalConfigured ? 'Modal GPT-OSS 120B' : 'Local Demo'
+      });
     } catch (error) {
       res.status(500).json({ error: "Failed to get QRNG status" });
     }
@@ -71,9 +90,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const sessionId = `dev-${Date.now()}`;
       let tokenCount = 0;
 
-      // Generate tokens using the LLM engine
-      console.log('[API] Starting generation with LLM engine...');
-      const generator = llmEngine.generateStream(request);
+      // Generate tokens using the active engine (Modal if configured, local otherwise)
+      console.log('[API] Starting generation with', isModalConfigured ? 'Modal GPT-OSS 120B' : 'local demo', 'engine...');
+      const generator = activeEngine.generate(
+        request.prompt,
+        request.profile,
+        request.maxTokens,
+        request.temperature
+      );
       
       for await (const tokenResponse of generator) {
         tokenCount++;
@@ -146,8 +170,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           userId: null
         });
 
-        // Stream generation
-        const stream = llmEngine.generateStream(validatedRequest);
+        // Stream generation using active engine (Modal if configured, local otherwise)
+        const stream = activeEngine.generate(
+          validatedRequest.prompt,
+          validatedRequest.profile,
+          validatedRequest.maxTokens,
+          validatedRequest.temperature
+        );
         let generatedTokens: string[] = [];
         let allInfluences: string[] = [];
 
