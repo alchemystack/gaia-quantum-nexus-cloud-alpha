@@ -81,14 +81,13 @@ model_volume = modal.Volume.from_name(
 
 @app.cls(
     image=image,
-    gpu=modal.gpu.A100(size="80GB"),  # Required for 120B model
+    gpu="A100-80GB",  # Required for 120B model
     memory=131072,  # 128GB RAM
     cpu=16,  # Enhanced CPU cores
     timeout=900,
     volumes={"/cache": model_volume},
     secrets=[modal.Secret.from_name("qrng-api-key")],
-    concurrency_limit=1,
-    max_containers=1  # Changed from container_idle_timeout
+    max_containers=1  # Using max_containers for v1.0 compliance
 )
 class QuantumGPT120BTransformers:
     """
@@ -190,7 +189,7 @@ class QuantumGPT120BTransformers:
             "status": "healthy",
             "model": "openai/gpt-oss-120b",
             "quantization": "8-bit",
-            "device": "A100 80GB",
+            "device": "A100-80GB",
             "quantum_enabled": bool(self.qrng_api_key),
             "container_warm": hasattr(self, 'model_loaded') and self.model_loaded
         }
