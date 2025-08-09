@@ -9,9 +9,6 @@ interface UseWebSocketProps {
 }
 
 export function useWebSocket({ url, onToken, onComplete, onError }: UseWebSocketProps) {
-  const hookId = useRef(Math.random().toString(36).substr(2, 9));
-  console.log(`[HOOK-${hookId.current}] WebSocket hook initialized`);
-  
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -23,7 +20,6 @@ export function useWebSocket({ url, onToken, onComplete, onError }: UseWebSocket
   const connect = useCallback(() => {
     // Skip connection in development mode to prevent HMR conflicts
     if (import.meta.env.DEV) {
-      console.log('[WebSocket] Skipping connection in dev mode to prevent HMR interference');
       // Set connected to true to enable the button
       setIsConnected(true);
       setIsConnecting(false);
@@ -114,16 +110,74 @@ export function useWebSocket({ url, onToken, onComplete, onError }: UseWebSocket
   }, []);
 
   const sendMessage = useCallback((request: GenerationRequest) => {
-    // In development mode, simulate message sending via HTTP
+    // In development mode, use HTTP with Server-Sent Events
     if (import.meta.env.DEV) {
-      console.log('[WebSocket] Dev mode - would send:', request);
       setIsGenerating(true);
       
-      // Simulate WebSocket behavior with HTTP fallback
-      setTimeout(() => {
-        onError?.('Development mode: WebSocket disabled to prevent HMR conflicts. Please use production mode for full functionality.');
+      // Use EventSource for Server-Sent Events
+      const eventSource = new EventSource('/api/generate', {
+        // This doesn't work with POST, so we'll use fetch with streaming
+      });
+      
+      // Use fetch with streaming instead
+      fetch('/api/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(request)
+      }).then(response => {
+        if (!response.body) {
+          onError?.('No response body received');
+          setIsGenerating(false);
+          return;
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+
+        const readStream = async () => {
+          try {
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+
+              const chunk = decoder.decode(value);
+              const lines = chunk.split('\n');
+
+              for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                  try {
+                    const data = JSON.parse(line.slice(6));
+                    
+                    if (data.type === 'token') {
+                      onToken?.(data);
+                    } else if (data.type === 'complete') {
+                      onComplete?.(data.sessionId, data.totalTokens);
+                      setIsGenerating(false);
+                    } else if (data.type === 'error') {
+                      onError?.(data.error);
+                      setIsGenerating(false);
+                    }
+                  } catch (e) {
+                    // Ignore malformed JSON
+                  }
+                }
+              }
+            }
+          } catch (error) {
+            console.error('Stream reading error:', error);
+            onError?.('Stream reading failed');
+            setIsGenerating(false);
+          }
+        };
+
+        readStream();
+      }).catch(error => {
+        console.error('HTTP generation error:', error);
+        onError?.('HTTP generation failed');
         setIsGenerating(false);
-      }, 1000);
+      });
       
       return true;
     }
@@ -134,7 +188,7 @@ export function useWebSocket({ url, onToken, onComplete, onError }: UseWebSocket
       return true;
     }
     return false;
-  }, [onError]);
+  }, [onToken, onComplete, onError]);
 
   const stopGeneration = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
@@ -144,11 +198,9 @@ export function useWebSocket({ url, onToken, onComplete, onError }: UseWebSocket
   }, []);
 
   useEffect(() => {
-    console.log(`[HOOK-${hookId.current}] useEffect mounting - calling connect()`);
     connect();
     
     return () => {
-      console.log(`[HOOK-${hookId.current}] useEffect cleanup - calling disconnect()`);
       disconnect();
     };
   }, [connect, disconnect]);

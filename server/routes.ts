@@ -42,6 +42,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // HTTP fallback endpoint for development mode
+  app.post("/api/generate", async (req, res) => {
+    try {
+      const request = generationRequestSchema.parse(req.body);
+      
+      // Set up Server-Sent Events for streaming
+      res.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+        'Access-Control-Allow-Origin': '*',
+      });
+
+      const sessionId = `dev-${Date.now()}`;
+      let tokenCount = 0;
+
+      // Generate tokens using the LLM engine
+      const generator = llmEngine.generateStream(request);
+      
+      for await (const tokenResponse of generator) {
+        tokenCount++;
+        res.write(`data: ${JSON.stringify({
+          type: 'token',
+          ...tokenResponse
+        })}\n\n`);
+      }
+
+      // Send completion event
+      res.write(`data: ${JSON.stringify({
+        type: 'complete',
+        sessionId,
+        totalTokens: tokenCount
+      })}\n\n`);
+
+      res.end();
+    } catch (error) {
+      console.error('Generation error:', error);
+      res.write(`data: ${JSON.stringify({
+        type: 'error',
+        error: error instanceof Error ? error.message : 'Generation failed'
+      })}\n\n`);
+      res.end();
+    }
+  });
+
   // WebSocket server for real-time text generation
   const wss = new WebSocketServer({ 
     server: httpServer, 
