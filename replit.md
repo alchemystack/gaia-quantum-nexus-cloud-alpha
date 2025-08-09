@@ -36,9 +36,16 @@ Preferred communication style: Simple, everyday language.
 ### Quantum Integration
 - **QRNG Provider**: Quantum Blockchains API for true quantum randomness
 - **Entropy Pool**: Buffered quantum random data for improved performance
-- **Fallback**: Crypto-secure randomness when quantum source unavailable
-- **Influence Translation**: Custom service to translate quantum effects into meaningful descriptions
+- **NO FALLBACK**: System halts if QRNG unavailable (strict quantum-only policy)
+- **Dual Output**: Shows both QRNG-modified text and vector interpretation
 - **Layer Analysis**: Real-time monitoring of attention, FFN, and embedding layers
+
+### Cloud Model Deployment (GPT-OSS 120B)
+- **Model**: bartowski/openai_gpt-oss-120b-GGUF-MXFP4-Experimental (60-80GB VRAM required)
+- **Deployment Scripts**: Modal serverless deployment in `deployment/modal-gpt-oss-120b.py`
+- **Integration**: CloudModelManager in `server/services/cloud-model-providers.ts`
+- **Low-Latency Setup**: Pre-fetching QRNG data, geographic proximity optimization
+- **Cost Optimization**: Modal recommended at ~$95/month for light usage vs $24k/month for dedicated
 
 ### Authentication & Authorization
 - **Current State**: No authentication implemented (demo mode)
@@ -51,6 +58,13 @@ Preferred communication style: Simple, everyday language.
 - **Quantum Blockchains QRNG API**: Primary source of quantum randomness for text generation
 - **Neon Database**: Serverless PostgreSQL hosting
 - **Replit**: Development and deployment platform
+
+### Cloud Model Hosting (GPT-OSS 120B)
+- **Modal (Recommended)**: Serverless GPU hosting, ~$95/month for light usage, 10-30s cold start
+- **RunPod**: Dedicated A100 80GB instances, $2-3/hour, lowest latency option
+- **AWS SageMaker**: Enterprise-grade hosting, P4d.24xlarge instances, ~$24k/month for 24/7
+- **Replicate**: Easy deployment, $0.001/sec GPU time, higher latency
+- **Together AI**: Managed service option (requires custom arrangement)
 
 ### UI & Styling
 - **Shadcn/ui**: Pre-built accessible UI components
