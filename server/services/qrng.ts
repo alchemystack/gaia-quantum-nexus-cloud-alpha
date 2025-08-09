@@ -19,7 +19,7 @@ export class QuantumBlockchainsQRNG implements QRNGProvider {
   constructor() {
     this.apiKey = process.env.QBCK_API_KEY || process.env.QRNG_API_KEY || '';
     if (!this.apiKey) {
-      console.warn('QRNG API key not found in environment variables. Falling back to crypto randomness.');
+      console.warn('QRNG API key not found in environment variables. Quantum generation will be unavailable.');
     }
     
     // Start entropy pooling if API key is available
@@ -114,73 +114,51 @@ export class QuantumBlockchainsQRNG implements QRNGProvider {
 
   async getRandomBytes(length: number): Promise<Buffer> {
     if (!this.apiKey) {
-      // Fallback to crypto randomness
-      const { randomBytes } = await import('crypto');
-      return randomBytes(length);
+      throw new Error('QRNG API key not available - true quantum randomness required');
     }
 
     // Try to use pooled entropy first
     const pooled = this.getPooledBytes(length);
     if (pooled) return pooled;
 
-    try {
-      const endpoint = `/${this.apiKey}/qbck/block/hex?size=1&length=${length}`;
-      const response = await this.makeRequest(endpoint);
-      
-      if (response.result && response.result[0]) {
-        return Buffer.from(response.result[0], 'hex');
-      }
-      
-      throw new Error('No data received from QRNG');
-    } catch (error) {
-      console.warn('QRNG request failed, falling back to crypto:', error);
-      const { randomBytes } = await import('crypto');
-      return randomBytes(length);
+    const endpoint = `/${this.apiKey}/qbck/block/hex?size=1&length=${length}`;
+    const response = await this.makeRequest(endpoint);
+    
+    if (response.result && response.result[0]) {
+      return Buffer.from(response.result[0], 'hex');
     }
+    
+    throw new Error('No quantum data received from QRNG API - true randomness required');
   }
 
   async getRandomIntegers(count: number, min: number, max: number): Promise<number[]> {
     if (!this.apiKey) {
-      // Fallback to crypto randomness
-      const { randomInt } = await import('crypto');
-      return Array.from({ length: count }, () => randomInt(min, max + 1));
+      throw new Error('QRNG API key not available - true quantum randomness required');
     }
 
-    try {
-      const endpoint = `/${this.apiKey}/qbck/block/int?size=${count}&min=${min}&max=${max}`;
-      const response = await this.makeRequest(endpoint);
-      
-      if (response.result && Array.isArray(response.result)) {
-        return response.result;
-      }
-      
-      throw new Error('No data received from QRNG');
-    } catch (error) {
-      console.warn('QRNG request failed, falling back to crypto:', error);
-      const { randomInt } = await import('crypto');
-      return Array.from({ length: count }, () => randomInt(min, max + 1));
+    const endpoint = `/${this.apiKey}/qbck/block/int?size=${count}&min=${min}&max=${max}`;
+    const response = await this.makeRequest(endpoint);
+    
+    if (response.result && Array.isArray(response.result)) {
+      return response.result;
     }
+    
+    throw new Error('No quantum data received from QRNG API - true randomness required');
   }
 
   async getRandomFloats(count: number, min: number, max: number): Promise<number[]> {
     if (!this.apiKey) {
-      // Fallback to crypto randomness
-      return Array.from({ length: count }, () => Math.random() * (max - min) + min);
+      throw new Error('QRNG API key not available - true quantum randomness required');
     }
 
-    try {
-      const endpoint = `/${this.apiKey}/qbck/block/double?size=${count}&min=${min}&max=${max}`;
-      const response = await this.makeRequest(endpoint);
-      
-      if (response.result && Array.isArray(response.result)) {
-        return response.result;
-      }
-      
-      throw new Error('No data received from QRNG');
-    } catch (error) {
-      console.warn('QRNG request failed, falling back to crypto:', error);
-      return Array.from({ length: count }, () => Math.random() * (max - min) + min);
+    const endpoint = `/${this.apiKey}/qbck/block/double?size=${count}&min=${min}&max=${max}`;
+    const response = await this.makeRequest(endpoint);
+    
+    if (response.result && Array.isArray(response.result)) {
+      return response.result;
     }
+    
+    throw new Error('No quantum data received from QRNG API - true randomness required');
   }
 
   async isAvailable(): Promise<boolean> {

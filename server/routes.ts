@@ -103,9 +103,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } catch (error) {
         console.error('Generation error:', error);
         if (ws.readyState === WebSocket.OPEN) {
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          let userMessage = errorMessage;
+          
+          // Provide user-friendly error messages for QRNG failures
+          if (errorMessage.includes('QRNG API key not available')) {
+            userMessage = 'True quantum randomness is required but no QRNG API key is configured. Please contact administrator to set up Quantum Blockchains API access.';
+          } else if (errorMessage.includes('No quantum data received from QRNG API')) {
+            userMessage = 'Unable to obtain true quantum randomness from QRNG service. Generation stopped to maintain quantum authenticity.';
+          } else if (errorMessage.includes('QRNG API Error') || errorMessage.includes('request timeout')) {
+            userMessage = 'Quantum Blockchains API is temporarily unavailable. True quantum randomness cannot be obtained at this time.';
+          }
+          
           ws.send(JSON.stringify({ 
             type: 'error', 
-            message: error instanceof Error ? error.message : 'Unknown error' 
+            message: userMessage 
           }));
         }
       }

@@ -21,8 +21,7 @@ import type {
   TokenResponse, 
   PerformanceMetrics, 
   LayerAnalysis, 
-  QRNGStatus,
-  QUANTUM_PROFILES 
+  QRNGStatus
 } from '../types/quantum';
 
 const QUANTUM_PROFILES = [
@@ -135,6 +134,16 @@ export default function QuantumInterface() {
 
   const handleGenerate = () => {
     if (!prompt.trim() || isGenerating || !isConnected) return;
+
+    // Check if quantum profile is selected but QRNG is unavailable
+    if (profile !== 'strict' && !qrngStatus?.available) {
+      toast({
+        title: 'Quantum Randomness Required',
+        description: 'This consciousness level requires true quantum randomness, but the QRNG service is offline. Please select "Strict (Deterministic)" mode or wait for QRNG to come online.',
+        variant: 'destructive'
+      });
+      return;
+    }
 
     // Reset state
     setGeneratedTokens([]);
@@ -273,15 +282,34 @@ export default function QuantumInterface() {
                     </SelectTrigger>
                     <SelectContent>
                       {QUANTUM_PROFILES.map((p) => (
-                        <SelectItem key={p.value} value={p.value} data-testid={`profile-option-${p.value}`}>
-                          {p.label}
+                        <SelectItem 
+                          key={p.value} 
+                          value={p.value} 
+                          data-testid={`profile-option-${p.value}`}
+                          disabled={p.value !== 'strict' && !qrngStatus?.available}
+                        >
+                          <div className="flex items-center justify-between w-full">
+                            <span className={p.value !== 'strict' && !qrngStatus?.available ? 'text-muted-foreground' : ''}>
+                              {p.label}
+                            </span>
+                            {p.value !== 'strict' && !qrngStatus?.available && (
+                              <span className="text-xs text-red-500 ml-2">QRNG Required</span>
+                            )}
+                          </div>
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  <p className="text-xs text-muted-foreground mt-1" data-testid="profile-description">
-                    {QUANTUM_PROFILES.find(p => p.value === profile)?.description}
-                  </p>
+                  <div className="mt-1 space-y-1">
+                    <p className="text-xs text-muted-foreground" data-testid="profile-description">
+                      {QUANTUM_PROFILES.find(p => p.value === profile)?.description}
+                    </p>
+                    {profile !== 'strict' && !qrngStatus?.available && (
+                      <p className="text-xs text-red-500" data-testid="qrng-warning">
+                        ⚠️ Quantum randomness unavailable - true QRNG required for this mode
+                      </p>
+                    )}
+                  </div>
                 </div>
                 
                 <div className="grid grid-cols-2 gap-3">
@@ -346,12 +374,12 @@ export default function QuantumInterface() {
                   <div className="flex space-x-2">
                     <Button 
                       onClick={handleGenerate}
-                      disabled={!prompt.trim() || isGenerating || !isConnected}
-                      className="bg-gradient-to-r from-quantum-indigo to-quantum-purple hover:from-quantum-purple hover:to-quantum-indigo"
+                      disabled={!prompt.trim() || isGenerating || !isConnected || (profile !== 'strict' && !qrngStatus?.available)}
+                      className="bg-gradient-to-r from-quantum-indigo to-quantum-purple hover:from-quantum-purple hover:to-quantum-indigo disabled:from-gray-600 disabled:to-gray-600"
                       data-testid="button-generate"
                     >
                       <Play className="mr-2 h-4 w-4" />
-                      {isGenerating ? 'Generating...' : 'Generate'}
+                      {isGenerating ? 'Generating...' : profile !== 'strict' && !qrngStatus?.available ? 'Quantum Randomness Required' : 'Generate'}
                     </Button>
                     <Button 
                       onClick={handleStop}

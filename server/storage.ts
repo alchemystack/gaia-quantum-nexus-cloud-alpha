@@ -44,6 +44,7 @@ export class MemStorage implements IStorage {
     const session: QuantumSession = {
       ...insertSession,
       id,
+      userId: insertSession.userId || null,
       generatedText: null,
       quantumInfluences: [],
       performanceMetrics: null,

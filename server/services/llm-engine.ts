@@ -93,14 +93,9 @@ export class QuantumLLMEngine {
   private async getQuantumNoise(profile: string): Promise<number> {
     if (profile === 'strict') return 0;
     
-    try {
-      const noiseLevel = this.getNoiseLevel(profile);
-      const randomFloats = await this.qrng.getRandomFloats(1, -1, 1);
-      return randomFloats[0] * noiseLevel;
-    } catch (error) {
-      // Fallback to pseudo-random
-      return (Math.random() - 0.5) * 2 * this.getNoiseLevel(profile);
-    }
+    const noiseLevel = this.getNoiseLevel(profile);
+    const randomFloats = await this.qrng.getRandomFloats(1, -1, 1);
+    return randomFloats[0] * noiseLevel;
   }
 
   private getNoiseLevel(profile: string): number {
@@ -135,13 +130,8 @@ export class QuantumLLMEngine {
       "entangled thoughts manifest across dimensions"
     ];
 
-    try {
-      const randomIndex = await this.qrng.getRandomIntegers(1, 0, influences.length - 1);
-      return influences[randomIndex[0]];
-    } catch (error) {
-      const index = Math.floor(Math.random() * influences.length);
-      return influences[index];
-    }
+    const randomIndex = await this.qrng.getRandomIntegers(1, 0, influences.length - 1);
+    return influences[randomIndex[0]];
   }
 
   private async analyzeLayerActivity(profile: string): Promise<LayerAnalysis> {
@@ -153,20 +143,12 @@ export class QuantumLLMEngine {
       };
     }
 
-    try {
-      const randomValues = await this.qrng.getRandomFloats(3, 0.1, 0.9);
-      return {
-        attention: randomValues[0],
-        ffn: randomValues[1],
-        embedding: randomValues[2]
-      };
-    } catch (error) {
-      return {
-        attention: 0.2 + Math.random() * 0.6,
-        ffn: 0.2 + Math.random() * 0.6,
-        embedding: 0.2 + Math.random() * 0.6
-      };
-    }
+    const randomValues = await this.qrng.getRandomFloats(3, 0.1, 0.9);
+    return {
+      attention: randomValues[0],
+      ffn: randomValues[1],
+      embedding: randomValues[2]
+    };
   }
 
   private calculateDelay(profile: string): number {
