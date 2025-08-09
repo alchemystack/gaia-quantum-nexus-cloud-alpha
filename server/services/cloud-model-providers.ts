@@ -65,9 +65,9 @@ export class RunPodProvider implements ModelProvider {
 }
 
 /**
- * Modal.com Integration (Serverless GPU)
- * Deploy via: modal deploy gpt-oss-120b.py
- * Auto-scales, pay per second of GPU usage
+ * Modal.com Production Integration - GPT-OSS 120B Transformer
+ * Runs the actual 120B parameter model with QRNG logit modification
+ * Deploy via: modal deploy deployment/modal-gpt-oss-120b.py
  */
 export class ModalProvider implements ModelProvider {
   name = 'Modal';

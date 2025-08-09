@@ -161,60 +161,90 @@ class GPTOSSModel:
         temperature: float
     ) -> Dict:
         """
-        Custom sampling that applies QRNG modifiers to logits
+        Production QRNG logit modification for GPT-OSS 120B transformer
+        This directly modifies the transformer's logits with quantum random vectors
         """
-        # Tokenize the prompt
+        # Tokenize the prompt for the actual transformer model
         tokens = self.model.tokenize(prompt.encode('utf-8'))
-        
+        context_tokens = list(tokens)
         generated_tokens = []
         
-        for i in range(max_tokens):
-            # Get logits for next token
-            logits = self.model.eval(tokens)
+        # Get the actual vocabulary size from the transformer model
+        vocab_size = self.model.n_vocab()
+        
+        for token_idx in range(max_tokens):
+            # Forward pass through the actual transformer to get logits
+            # This runs the full 120B parameter transformer computation
+            self.model.eval(context_tokens)
             
-            # Apply QRNG modifiers to logits
-            vocab_size = len(logits)
-            modifier_idx = i % len(qrng_modifiers)
+            # Get the raw logits from the transformer's final layer
+            # These are the actual neural network outputs before softmax
+            raw_logits = self.model._scores  # Access internal logit scores
             
-            # Scale and apply QRNG to logits
-            for j in range(min(vocab_size, len(qrng_modifiers))):
-                logits[j] += qrng_modifiers[(modifier_idx + j) % len(qrng_modifiers)] * 2.0
+            # Apply QRNG modification to the transformer's actual logits
+            # This is where quantum randomness directly influences the neural network
+            modified_logits = np.zeros(vocab_size, dtype=np.float32)
             
-            # Apply temperature
-            logits = logits / temperature
+            # Copy original transformer logits
+            for i in range(vocab_size):
+                modified_logits[i] = raw_logits[i] if i < len(raw_logits) else -float('inf')
             
-            # Softmax to get probabilities
-            exp_logits = np.exp(logits - np.max(logits))
-            probs = exp_logits / np.sum(exp_logits)
+            # Apply quantum random vector to modify transformer logits
+            # Each QRNG value directly adjusts the corresponding logit
+            qrng_offset = (token_idx * vocab_size) % len(qrng_modifiers)
+            for i in range(min(vocab_size, len(qrng_modifiers))):
+                qrng_idx = (qrng_offset + i) % len(qrng_modifiers)
+                # Direct logit modification with quantum random value
+                modified_logits[i] += qrng_modifiers[qrng_idx] * 2.0
             
-            # Sample token using QRNG-influenced probabilities
-            # Use another QRNG value for sampling
-            sample_idx = (modifier_idx * 7 + 13) % len(qrng_modifiers)
-            sample_value = abs(qrng_modifiers[sample_idx])
+            # Apply temperature scaling to modified logits
+            modified_logits = modified_logits / temperature
             
-            # Cumulative sampling
-            cumsum = np.cumsum(probs)
-            next_token = np.searchsorted(cumsum, sample_value % 1.0)
+            # Convert modified logits to probabilities using softmax
+            # This is the standard transformer probability computation
+            max_logit = np.max(modified_logits)
+            exp_logits = np.exp(modified_logits - max_logit)  # Numerical stability
+            probabilities = exp_logits / np.sum(exp_logits)
             
-            generated_tokens.append(next_token)
-            tokens.append(next_token)
+            # Use QRNG for sampling from the modified probability distribution
+            # This ensures even the sampling process uses quantum randomness
+            sample_idx = (token_idx * 17 + 7) % len(qrng_modifiers)
+            qrng_sample = abs(qrng_modifiers[sample_idx]) % 1.0
             
-            # Check for EOS token
-            if next_token == self.model.token_eos():
+            # Sample next token from QRNG-modified transformer probabilities
+            cumulative_probs = np.cumsum(probabilities)
+            next_token_id = int(np.searchsorted(cumulative_probs, qrng_sample))
+            
+            # Ensure valid token ID
+            next_token_id = min(next_token_id, vocab_size - 1)
+            
+            # Add to generation
+            generated_tokens.append(next_token_id)
+            context_tokens.append(next_token_id)
+            
+            # Check for end-of-sequence token
+            if next_token_id == self.model.token_eos():
                 break
         
-        # Decode generated tokens
-        text = self.model.detokenize(generated_tokens).decode('utf-8')
+        # Decode the generated tokens from the transformer
+        generated_text = self.model.detokenize(generated_tokens).decode('utf-8', errors='ignore')
         
         return {
             "choices": [{
-                "text": text,
-                "finish_reason": "stop" if generated_tokens[-1] == self.model.token_eos() else "length"
+                "text": generated_text,
+                "finish_reason": "stop" if generated_tokens and generated_tokens[-1] == self.model.token_eos() else "length"
             }],
             "usage": {
                 "completion_tokens": len(generated_tokens),
-                "prompt_tokens": len(tokens) - len(generated_tokens),
-                "total_tokens": len(tokens)
+                "prompt_tokens": len(tokens),
+                "total_tokens": len(tokens) + len(generated_tokens)
+            },
+            "model_info": {
+                "name": "GPT-OSS 120B",
+                "parameters": "120 billion",
+                "vocab_size": vocab_size,
+                "qrng_vectors_used": len(qrng_modifiers),
+                "logit_modification": "direct_transformer_logits"
             }
         }
     
