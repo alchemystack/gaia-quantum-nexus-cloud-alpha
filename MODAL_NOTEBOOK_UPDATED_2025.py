@@ -458,14 +458,24 @@ print("✅ Cell 4: Helper functions with logging defined")
 # ============================================
 """
 Deploy the model to Modal with real-time progress tracking
+IMPORTANT: Run Cell 1 first to define the 'app' variable!
 """
 
 import datetime
+import modal
 
 def deploy():
     """
     Deploy the optimized quantum model with real-time logging
+    Note: Requires 'app' variable from Cell 1 to be defined
     """
+    # Check if app is defined
+    if 'app' not in globals():
+        print("❌ ERROR: 'app' variable not found!")
+        print("Please run Cell 1 first to initialize the Modal app.")
+        print("Then run this cell again.")
+        return None
+    
     start_time = datetime.datetime.now()
     
     print("=" * 60)
@@ -556,18 +566,37 @@ print("\n🚀 TO DEPLOY: Run deploy() in the next cell")
 # ============================================
 """
 Execute this cell to deploy the model
+IMPORTANT: Run cells 1-5 in order before running this cell!
 """
 
 import datetime
 
-print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] 🚀 Starting deployment execution...")
-print("Watch the timestamps to track progress in real-time\n")
-
-# Run the deployment
-deployment_name = deploy()
-
-print(f"\n[{datetime.datetime.now().strftime('%H:%M:%S')}] ✨ Deployment '{deployment_name}' is ready!")
-print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] You can now test the endpoints in Cell 7")
+# Check if required components are available
+if 'app' not in globals():
+    print("❌ ERROR: Modal app not initialized!")
+    print("\n📋 Please run the cells in order:")
+    print("   1. Run Cell 1 to initialize Modal app")
+    print("   2. Run Cell 2 to define the model class")
+    print("   3. Run Cell 3 to define endpoints")
+    print("   4. Run Cell 4 to define helper functions")
+    print("   5. Run Cell 5 to define deploy function")
+    print("   6. Then run this cell again")
+elif 'deploy' not in globals():
+    print("❌ ERROR: Deploy function not defined!")
+    print("Please run Cell 5 first, then run this cell again.")
+else:
+    print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] 🚀 Starting deployment execution...")
+    print("Watch the timestamps to track progress in real-time\n")
+    
+    # Run the deployment
+    deployment_name = deploy()
+    
+    if deployment_name:
+        print(f"\n[{datetime.datetime.now().strftime('%H:%M:%S')}] ✨ Deployment '{deployment_name}' is ready!")
+        print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] You can now test the endpoints in Cell 7")
+    else:
+        print(f"\n[{datetime.datetime.now().strftime('%H:%M:%S')}] ⚠️ Deployment was not completed")
+        print("Please check the error messages above and try again")
 
 
 # ============================================
