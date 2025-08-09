@@ -1,0 +1,47 @@
+============================================================
+🌌 GAIA QUANTUM NEXUS - OPTIMIZED DEPLOYMENT
+============================================================
+
+📦 Step 1: Checking model cache...
+---------------------------------------------------------------------------
+ExecutionError                            Traceback (most recent call last)
+Cell In[7], line 51
+     46     print("=" * 60)
+     49 if __name__ == "__main__":
+     50     # For local testing
+---> 51     main()
+
+File /usr/local/lib/python3.12/site-packages/modal/app.py:69, in _LocalEntrypoint.__call__(self, *args, **kwargs)
+     68 def __call__(self, *args: Any, **kwargs: Any) -> Any:
+---> 69     return self._info.raw_f(*args, **kwargs)
+
+Cell In[7], line 16, in main()
+     14 # Step 1: Ensure model is downloaded to volume
+     15 print("\n📦 Step 1: Checking model cache...")
+---> 16 download_result = download_model_if_needed.remote()
+     17 print(f"Cache status: {download_result}")
+     19 # Step 2: Deploy the model service
+
+File /usr/local/lib/python3.12/site-packages/modal/_object.py:292, in live_method.<locals>.wrapped(self, *args, **kwargs)
+    290 @wraps(method)
+    291 async def wrapped(self, *args, **kwargs):
+--> 292     await self.hydrate()
+    293     return await method(self, *args, **kwargs)
+
+File /usr/local/lib/python3.12/site-packages/modal/_object.py:280, in _Object.hydrate(self, client)
+    277         logger.debug(f"rehydrated {self} with client {id(c)}")
+    278 elif not self._hydrate_lazily:
+    279     # TODO(michael) can remove _hydrate lazily? I think all objects support it now?
+--> 280     self._validate_is_hydrated()
+    281 else:
+    282     c = client if client is not None else await _Client.from_env()
+
+File /usr/local/lib/python3.12/site-packages/modal/_object.py:142, in _Object._validate_is_hydrated(self)
+    139 else:
+    140     # Technically possible, but with an ambiguous cause.
+    141     reason = ""
+--> 142 raise ExecutionError(
+    143     f"{object_type} has not been hydrated with the metadata it needs to run on Modal{reason}."
+    144 )
+
+ExecutionError: Function has not been hydrated with the metadata it needs to run on Modal, because the App it is defined on is not running.
