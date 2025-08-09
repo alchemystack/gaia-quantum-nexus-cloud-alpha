@@ -39,7 +39,7 @@ import aiohttp
 app = modal.App("gaia-quantum-120b-enhanced")
 
 # Enhanced GPU configuration - A100 80GB with maximum resources
-gpu_config = modal.gpu.A100(count=1, memory=80)  # 80GB VRAM
+gpu_config = modal.gpu.A100(count=1)  # A100 80GB VRAM (Modal auto-selects 80GB variant)
 
 # Model storage - persistent volume for the 120B model
 volume = modal.Volume.from_name("gaia-quantum-models-enhanced", create_if_missing=True)
@@ -74,8 +74,8 @@ image = (
     memory=131072, # 128GB RAM
 )
 def upload_model_from_local(
-    model_path_part1: Optional[str] = "D:.cashe\lm-studio\models\lmstudio-community\gpt-oss-120b-GGUF\gpt-oss-120b-MXFP4-00001-of-00002.gguf",
-    model_path_part2: Optional[str] = "D:.cashe\lm-studio\models\lmstudio-community\gpt-oss-120b-GGUF\gpt-oss-120b-MXFP4-00002-of-00002.gguf"
+    model_path_part1: Optional[str] = r"D:.cashe\lm-studio\models\lmstudio-community\gpt-oss-120b-GGUF\gpt-oss-120b-MXFP4-00001-of-00002.gguf",
+    model_path_part2: Optional[str] = r"D:.cashe\lm-studio\models\lmstudio-community\gpt-oss-120b-GGUF\gpt-oss-120b-MXFP4-00002-of-00002.gguf"
 ):
     """
     Cell 1: Upload OpenAI GPT-OSS 120B GGUF model (split MXFP4 format)
