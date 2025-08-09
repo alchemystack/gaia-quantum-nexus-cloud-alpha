@@ -31,11 +31,10 @@ const CONFIG = {
 };
 
 /**
- * Production integration for GPT-OSS 120B with QRNG logit modification
+ * Main integration example
  */
-async function runProductionIntegration() {
-  console.log('=== GPT-OSS 120B Production Integration with QRNG ===\n');
-  console.log('Model: bartowski/openai_gpt-oss-120b-GGUF-MXFP4-Experimental\n');
+async function demonstrateCloudIntegration() {
+  console.log('=== GPT-OSS 120B Cloud Integration Demo ===\n');
   
   // Step 1: Show cost estimates
   console.log('📊 Cost Estimates for Different Providers:\n');
@@ -118,10 +117,10 @@ async function runProductionIntegration() {
 }
 
 /**
- * Production low-latency optimization setup
+ * Low-latency optimization example
  */
-async function setupLowLatencyProduction() {
-  console.log('\n\n=== Production Low-Latency QRNG Integration ===\n');
+async function demonstrateLowLatencySetup() {
+  console.log('\n\n=== Low-Latency QRNG Integration ===\n');
   
   const qrng = new QuantumBlockchainsQRNG();
   
@@ -200,23 +199,23 @@ function showDeploymentChecklist() {
   checklist.forEach(item => console.log(item));
 }
 
-// Run production integration
+// Run the demonstration
 async function main() {
   try {
-    await runProductionIntegration();
-    await setupLowLatencyProduction();
+    await demonstrateCloudIntegration();
+    await demonstrateLowLatencySetup();
     showDeploymentChecklist();
     
-    console.log('\n\n✅ Production integration complete!');
+    console.log('\n\n✅ Integration demonstration complete!');
     console.log('📚 Next steps:');
     console.log('1. Review deployment/DEPLOYMENT_GUIDE.md');
     console.log('2. Choose your cloud provider');
     console.log('3. Deploy the model using provided scripts');
     console.log('4. Update environment variables');
-    console.log('5. Test the production integration\n');
+    console.log('5. Test the integration\n');
     
   } catch (error) {
-    console.error('Error in production integration:', error);
+    console.error('Error in demonstration:', error);
   }
 }
 
@@ -224,8 +223,8 @@ async function main() {
 export {
   CloudModelManager,
   CloudCostEstimator,
-  runProductionIntegration,
-  setupLowLatencyProduction
+  demonstrateCloudIntegration,
+  demonstrateLowLatencySetup
 };
 
 // Run if executed directly

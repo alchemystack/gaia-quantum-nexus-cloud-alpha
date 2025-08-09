@@ -2,7 +2,7 @@
 
 ## Overview
 
-Gaia Quantum Nexus Cloud is a production quantum-augmented language model system that runs the actual GPT-OSS 120B transformer model with direct logit modification using true quantum randomness from Quantum Blockchains QRNG API. **CRITICAL: This is NOT a demonstration - it runs the real 120B parameter model (bartowski/openai_gpt-oss-120b-GGUF-MXFP4-Experimental) with actual transformer logit modification. The system uses ONLY true quantum randomness with NO fallback to pseudorandomness. Generation will HALT if QRNG is unavailable.** The application provides a sophisticated web interface for quantum-influenced AI text generation with the full 120B model, featuring real-time performance metrics, layer analysis, and visual quantum effects.
+Gaia Quantum Nexus Cloud is a quantum-augmented language model interface that integrates true quantum randomness from Quantum Blockchains QRNG API into text generation. **CRITICAL: This system uses ONLY true quantum randomness with NO fallback to pseudorandomness. Generation will HALT if QRNG is unavailable.** The application provides a sophisticated web interface for experimenting with quantum-influenced AI text generation, featuring real-time performance metrics, layer analysis, and visual quantum effects. The system combines React frontend with Express backend, using HTTP streaming for real-time token generation and PostgreSQL for session persistence.
 
 ## User Preferences
 
