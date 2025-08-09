@@ -57,26 +57,33 @@ export class ModalLLMEngine {
     }
     
     console.log(`[ModalLLM] Calling transformers endpoint with quantum profile: ${profile}`);
+    console.log(`[ModalLLM] Endpoint: ${this.modalEndpoint}`);
     
     // Call Modal transformers endpoint for generation with direct logit modification
     // Modal uses token-id:token-secret format for authentication
     const authToken = `${this.modalApiKey}:${this.modalTokenSecret}`;
     const encodedAuth = Buffer.from(authToken).toString('base64');
     
-    const response = await fetch(this.modalEndpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Basic ${encodedAuth}`
-      },
-      body: JSON.stringify({
-        prompt,
-        max_tokens: maxTokens,
-        temperature,
-        quantum_profile: profile,  // Quantum modification happens server-side on logits
-        diagnostics: true
-      })
-    });
+    let response;
+    try {
+      response = await fetch(this.modalEndpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Basic ${encodedAuth}`
+        },
+        body: JSON.stringify({
+          prompt,
+          max_tokens: maxTokens,
+          temperature,
+          quantum_profile: profile,  // Quantum modification happens server-side on logits
+          diagnostics: true
+        })
+      });
+    } catch (error) {
+      console.error(`[ModalLLM] Network error connecting to Modal endpoint:`, error);
+      throw new Error(`Modal endpoint unreachable. Please ensure your Modal deployment is active and the MODAL_ENDPOINT URL is correct. Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
     
     if (!response.ok) {
       throw new Error(`Modal API error: ${response.status} ${response.statusText}`);
