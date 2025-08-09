@@ -40,25 +40,33 @@ Preferred communication style: Simple, everyday language.
 - **Dual Output**: Shows both QRNG-modified text and vector interpretation
 - **Layer Analysis**: Real-time monitoring of attention, FFN, and embedding layers
 
-### Cloud Model Deployment (OpenAI GPT-OSS 120B)
+### Cloud Model Deployment (OpenAI GPT-OSS 120B with Transformers)
 - **Model**: OpenAI GPT-OSS 120B (official release from OpenAI)
-- **Model Source**: lmstudio-community/gpt-oss-120b-GGUF (split MXFP4 files)
+- **Framework**: Transformers library for DIRECT LOGIT MODIFICATION
 - **Model Stats**: 117B parameters total, 5.1B active parameters
-- **Quantization**: MXFP4 optimized for GPU inference
-- **License**: Apache 2.0 with harmony response format
-- **Running Command**: `llama-server -m gpt-oss-120b-MXFP4-00001-of-00002.gguf -c 8192 -fa --jinja --reasoning-format none -t 16 -ngl 999`
-- **GPU Requirements**: 1x A100 with 80GB VRAM (MXFP4 optimized)
+- **Quantization**: 8-bit quantization to fit in 80GB VRAM
+- **License**: Apache 2.0
+- **Critical Feature**: Direct access to raw logits for QRNG modification BEFORE sampling
+- **GPU Requirements**: 1x A100 with 80GB VRAM
 - **System Resources**: 128GB RAM, 16 CPU cores (enhanced configuration)
 - **Deployment Scripts**: 
-  - `MODAL_NOTEBOOK_ENHANCED.py` - Cell-based deployment with local upload support (handles split GGUF files)
-  - `MODAL_WEB_NOTEBOOK.py` - Original single-script deployment
+  - `MODAL_TRANSFORMERS_QUANTUM.py` - NEW: Transformers-based deployment with direct logit control
+  - `MODAL_NOTEBOOK_ENHANCED.py` - Legacy llama.cpp deployment (no logit access)
   - `CONNECT_MODAL_AUTO.py` - Automated connection script for Modal endpoints
-- **Local Files**: D:.cashe\lm-studio\models\lmstudio-community\gpt-oss-120b-GGUF\
-  - Part 1: gpt-oss-120b-MXFP4-00001-of-00002.gguf
-  - Part 2: gpt-oss-120b-MXFP4-00002-of-00002.gguf
-- **Integration**: ModalLLMEngine in `server/services/modal-llm-engine.ts`
-- **Low-Latency Setup**: Model stays loaded (keep_warm=1), Flash Attention enabled, 16 CPU threads
-- **Cost Optimization**: Enhanced config ~$95-120/month for 24/7 availability
+- **Quantum Modification Process**:
+  1. Forward pass generates raw logits (shape: [batch_size, vocab_size])
+  2. QRNG noise tensor applied directly to logits
+  3. Modified logits passed through softmax for sampling
+  4. Full control over quantum influence intensity
+- **Quantum Profiles**:
+  - `strict`: No modification (control)
+  - `light`: 10% quantum influence on logits
+  - `medium`: 30% quantum influence (balanced)
+  - `spicy`: 50% quantum influence (strong)
+  - `chaos`: 80% quantum influence (maximum)
+- **Integration**: ModalLLMEngine updated to use transformers endpoints
+- **Low-Latency Setup**: Model stays loaded (keep_warm=1), 8-bit quantization
+- **Cost Optimization**: ~$95-120/month for 24/7 availability
 
 ### Authentication & Authorization
 - **Current State**: No authentication implemented (demo mode)
