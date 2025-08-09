@@ -92,11 +92,21 @@ export default function QuantumInterface() {
       });
     },
     onError: (error: string) => {
-      toast({
-        title: 'Generation Error',
-        description: error,
-        variant: 'destructive'
-      });
+      // Check if this is a QRNG failure - show critical warning
+      if (error.toLowerCase().includes('qrng') || error.toLowerCase().includes('quantum')) {
+        toast({
+          title: '⚠️ QUANTUM RANDOMNESS REQUIRED',
+          description: 'Generation HALTED - This system requires TRUE quantum randomness. NO pseudorandom fallback exists. The QRNG API must be accessible for generation to proceed.',
+          variant: 'destructive',
+          duration: 10000, // Show for 10 seconds
+        });
+      } else {
+        toast({
+          title: 'Generation Error',
+          description: error,
+          variant: 'destructive'
+        });
+      }
     }
   });
 
@@ -237,6 +247,7 @@ export default function QuantumInterface() {
                   Gaia Quantum Nexus
                 </h1>
                 <p className="text-sm text-muted-foreground">Quantum-Augmented Large Language Model</p>
+                <p className="text-xs text-yellow-500/90 font-mono">⚠️ TRUE QUANTUM ONLY - NO PSEUDORANDOM FALLBACK</p>
               </div>
             </div>
             <div className="flex items-center space-x-4">

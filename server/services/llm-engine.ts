@@ -42,29 +42,44 @@ export class QuantumLLMEngine {
 
     const { prompt, profile, maxTokens, temperature } = request;
     
+    // CRITICAL: Pre-check QRNG availability - NO FALLBACK ALLOWED
+    if (profile !== 'strict') {
+      const isAvailable = await this.qrng.isAvailable();
+      if (!isAvailable) {
+        throw new Error('QRNG unavailable - generation halted. True quantum randomness is required. NO pseudorandom fallback.');
+      }
+    }
+    
     // Simple tokenization - in production use proper tokenizer
     let tokenIndex = 0;
     const maxIndex = Math.min(this.sampleTokens.length, maxTokens);
 
     while (tokenIndex < maxIndex && this.tokenCount < maxTokens) {
-      const token = await this.generateNextToken(profile, temperature);
-      const influence = await this.calculateQuantumInfluence(profile);
-      const layerAnalysis = await this.analyzeLayerActivity(profile);
-      const performanceMetrics = this.getPerformanceMetrics();
+      try {
+        // All quantum operations MUST succeed or generation stops
+        const token = await this.generateNextToken(profile, temperature);
+        const influence = await this.calculateQuantumInfluence(profile);
+        const layerAnalysis = await this.analyzeLayerActivity(profile);
+        const performanceMetrics = this.getPerformanceMetrics();
 
-      yield {
-        token,
-        influence,
-        layerAnalysis,
-        performanceMetrics
-      };
+        yield {
+          token,
+          influence,
+          layerAnalysis,
+          performanceMetrics
+        };
 
-      tokenIndex++;
-      this.tokenCount++;
-      
-      // Variable delay based on profile
-      const delay = this.calculateDelay(profile);
-      await new Promise(resolve => setTimeout(resolve, delay));
+        tokenIndex++;
+        this.tokenCount++;
+        
+        // Variable delay based on profile
+        const delay = this.calculateDelay(profile);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      } catch (error) {
+        // If QRNG fails mid-generation, STOP IMMEDIATELY - NO FALLBACK
+        console.error('[LLM] CRITICAL: QRNG failure during generation, stopping:', error);
+        throw new Error(`Generation halted - quantum randomness unavailable: ${error instanceof Error ? error.message : 'QRNG failure'}`);
+      }
     }
   }
 

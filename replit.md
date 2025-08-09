@@ -2,7 +2,7 @@
 
 ## Overview
 
-Gaia Quantum Nexus Cloud is a quantum-augmented language model interface that integrates true quantum randomness from Quantum Blockchains QRNG API into text generation. The application provides a sophisticated web interface for experimenting with quantum-influenced AI text generation, featuring real-time performance metrics, layer analysis, and visual quantum effects. The system combines React frontend with Express backend, using WebSocket for real-time token streaming and PostgreSQL for session persistence.
+Gaia Quantum Nexus Cloud is a quantum-augmented language model interface that integrates true quantum randomness from Quantum Blockchains QRNG API into text generation. **CRITICAL: This system uses ONLY true quantum randomness with NO fallback to pseudorandomness. Generation will HALT if QRNG is unavailable.** The application provides a sophisticated web interface for experimenting with quantum-influenced AI text generation, featuring real-time performance metrics, layer analysis, and visual quantum effects. The system combines React frontend with Express backend, using HTTP streaming for real-time token generation and PostgreSQL for session persistence.
 
 ## User Preferences
 
