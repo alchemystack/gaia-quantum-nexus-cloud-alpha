@@ -18,6 +18,7 @@ export class ModalLLMEngine {
   private qrng: QuantumBlockchainsQRNG;
   private modalEndpoint: string;
   private modalApiKey: string;
+  private modalTokenSecret: string;
   private tokenCount: number = 0;
   private startTime: number = 0;
   private entropyUsed: number = 0;
@@ -26,9 +27,10 @@ export class ModalLLMEngine {
     this.qrng = qrng;
     this.modalEndpoint = process.env.MODAL_ENDPOINT || 'https://your-username--gpt-oss-120b-qrng.modal.run';
     this.modalApiKey = process.env.MODAL_API_KEY || '';
+    this.modalTokenSecret = process.env.MODAL_TOKEN_SECRET || '';
     
-    if (!this.modalApiKey) {
-      console.warn('[ModalLLM] Modal API key not set. Set MODAL_ENDPOINT and MODAL_API_KEY environment variables.');
+    if (!this.modalApiKey || !this.modalTokenSecret) {
+      console.warn('[ModalLLM] Modal authentication not fully configured. Set MODAL_ENDPOINT, MODAL_API_KEY, and MODAL_TOKEN_SECRET environment variables.');
     }
   }
 
@@ -57,11 +59,15 @@ export class ModalLLMEngine {
     console.log(`[ModalLLM] Calling transformers endpoint with quantum profile: ${profile}`);
     
     // Call Modal transformers endpoint for generation with direct logit modification
+    // Modal uses token-id:token-secret format for authentication
+    const authToken = `${this.modalApiKey}:${this.modalTokenSecret}`;
+    const encodedAuth = Buffer.from(authToken).toString('base64');
+    
     const response = await fetch(this.modalEndpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${this.modalApiKey}`
+        'Authorization': `Basic ${encodedAuth}`
       },
       body: JSON.stringify({
         prompt,
@@ -178,15 +184,20 @@ export class ModalLLMEngine {
    * Check if Modal endpoint is configured and reachable
    */
   async isConfigured(): Promise<boolean> {
-    if (!this.modalApiKey || !this.modalEndpoint) {
+    if (!this.modalApiKey || !this.modalTokenSecret || !this.modalEndpoint) {
       return false;
     }
     
     try {
+      // Use the same authentication format as generate method
+      const authToken = `${this.modalApiKey}:${this.modalTokenSecret}`;
+      const encodedAuth = Buffer.from(authToken).toString('base64');
+      
       const response = await fetch(`${this.modalEndpoint}/info`, {
         method: 'GET',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Basic ${encodedAuth}`
         }
       });
       

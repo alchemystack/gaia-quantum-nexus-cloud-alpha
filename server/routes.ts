@@ -22,7 +22,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   if (isModalConfigured) {
     console.log('[Routes] Using Modal-hosted GPT-OSS 120B model with QRNG logit modification');
   } else {
-    console.log('[Routes] Modal not configured. Set MODAL_ENDPOINT and MODAL_API_KEY to use the real 120B model');
+    console.log('[Routes] Modal not configured. Set MODAL_ENDPOINT, MODAL_API_KEY, and MODAL_TOKEN_SECRET to use the real 120B model');
   }
 
   // REST API routes
