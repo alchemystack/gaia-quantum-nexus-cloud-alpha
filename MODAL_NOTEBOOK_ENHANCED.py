@@ -74,8 +74,8 @@ image = (
     memory=131072, # 128GB RAM
 )
 def upload_model_from_local(
-    model_path_part1: Optional[str] = "D:.cashe\lm-studio\models\lmstudio-community\gpt-oss-120b-GGUF\gpt-oss-120b-MXFP4-00001-of-00002.gguf",
-    model_path_part2: Optional[str] = "D:.cashe\lm-studio\models\lmstudio-community\gpt-oss-120b-GGUF\gpt-oss-120b-MXFP4-00002-of-00002.gguf"
+    model_path_part1: Optional[str] = r"D:\.cache\lm-studio\models\lmstudio-community\gpt-oss-120b-GGUF\gpt-oss-120b-MXFP4-00001-of-00002.gguf",
+    model_path_part2: Optional[str] = r"D:\.cache\lm-studio\models\lmstudio-community\gpt-oss-120b-GGUF\gpt-oss-120b-MXFP4-00002-of-00002.gguf"
 ):
     """
     Cell 1: Upload OpenAI GPT-OSS 120B GGUF model (split MXFP4 format)
