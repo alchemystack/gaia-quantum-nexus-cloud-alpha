@@ -331,14 +331,14 @@ These will be accessible after deployment
 """
 
 @app.function()
-@modal.web_endpoint(method="GET")
+@modal.fastapi_endpoint(method="GET")
 def health():
     """Health check endpoint - tests if model is running"""
     instance = QuantumGPT120BTransformers()
     return instance.health.remote()
 
 @app.function()
-@modal.web_endpoint(method="POST")
+@modal.fastapi_endpoint(method="POST")
 def generate(request: dict):
     """Main generation endpoint - accepts POST requests with prompt"""
     instance = QuantumGPT120BTransformers()
