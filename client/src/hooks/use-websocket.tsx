@@ -18,21 +18,35 @@ export function useWebSocket({ url, onToken, onComplete, onError }: UseWebSocket
   const maxReconnectAttempts = 10;
 
   const connect = useCallback(() => {
+    const connectId = Math.random().toString(36).substr(2, 9);
+    console.log(`[${connectId}] Connect called - current state:`, {
+      existing: wsRef.current?.readyState,
+      isConnecting,
+      readyState: wsRef.current ? WebSocket[Object.keys(WebSocket).find(k => WebSocket[k] === wsRef.current?.readyState)] : 'none'
+    });
+    
     // Clean up existing connection first
     if (wsRef.current) {
-      if (wsRef.current.readyState === WebSocket.OPEN) return;
+      if (wsRef.current.readyState === WebSocket.OPEN) {
+        console.log(`[${connectId}] Already connected, skipping`);
+        return;
+      }
+      console.log(`[${connectId}] Closing existing connection`);
       wsRef.current.close();
       wsRef.current = null;
     }
     
-    if (isConnecting) return; // Prevent multiple simultaneous connection attempts
+    if (isConnecting) {
+      console.log(`[${connectId}] Already connecting, skipping`);
+      return;
+    }
     
     setIsConnecting(true);
     
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const wsUrl = `${protocol}//${window.location.host}${url}`;
     
-    console.log('Attempting WebSocket connection to:', wsUrl);
+    console.log(`[${connectId}] Creating new WebSocket to:`, wsUrl);
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
