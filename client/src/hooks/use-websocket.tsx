@@ -110,72 +110,103 @@ export function useWebSocket({ url, onToken, onComplete, onError }: UseWebSocket
   }, []);
 
   const sendMessage = useCallback((request: GenerationRequest) => {
-    // In development mode, use HTTP with Server-Sent Events
+    // In development mode, use HTTP with streaming
     if (import.meta.env.DEV) {
       setIsGenerating(true);
       
-      // Use EventSource for Server-Sent Events
-      const eventSource = new EventSource('/api/generate', {
-        // This doesn't work with POST, so we'll use fetch with streaming
-      });
+      // Use fetch with streaming response
+      console.log('[HTTP] Sending generation request:', request);
       
-      // Use fetch with streaming instead
       fetch('/api/generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(request)
-      }).then(response => {
+      }).then(async response => {
+        console.log('[HTTP] Response received:', response.status, response.statusText);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+        }
+        
         if (!response.body) {
-          onError?.('No response body received');
-          setIsGenerating(false);
-          return;
+          throw new Error('No response body received');
         }
 
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
+        let buffer = '';
+        let tokenCount = 0;
 
-        const readStream = async () => {
-          try {
-            while (true) {
-              const { done, value } = await reader.read();
-              if (done) break;
+        console.log('[HTTP] Starting to read stream...');
 
-              const chunk = decoder.decode(value);
-              const lines = chunk.split('\n');
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) {
+              console.log('[HTTP] Stream complete');
+              break;
+            }
 
-              for (const line of lines) {
-                if (line.startsWith('data: ')) {
-                  try {
-                    const data = JSON.parse(line.slice(6));
-                    
-                    if (data.type === 'token') {
-                      onToken?.(data);
-                    } else if (data.type === 'complete') {
-                      onComplete?.(data.sessionId, data.totalTokens);
-                      setIsGenerating(false);
-                    } else if (data.type === 'error') {
-                      onError?.(data.error);
-                      setIsGenerating(false);
-                    }
-                  } catch (e) {
-                    // Ignore malformed JSON
+            // Decode the chunk and add to buffer
+            buffer += decoder.decode(value, { stream: true });
+            
+            // Process complete lines
+            const lines = buffer.split('\n');
+            // Keep the last incomplete line in the buffer
+            buffer = lines.pop() || '';
+
+            for (const line of lines) {
+              if (line.trim() === '') continue;
+              
+              if (line.startsWith('data: ')) {
+                try {
+                  const data = JSON.parse(line.slice(6));
+                  
+                  if (data.type === 'token') {
+                    tokenCount++;
+                    // Remove the type field before passing to onToken
+                    const { type, ...tokenData } = data;
+                    console.log(`[HTTP] Token ${tokenCount} received:`, tokenData.token);
+                    onToken?.(tokenData as TokenResponse);
+                  } else if (data.type === 'complete') {
+                    console.log('[HTTP] Generation complete:', data);
+                    onComplete?.(data.sessionId, data.totalTokens);
+                    setIsGenerating(false);
+                  } else if (data.type === 'error') {
+                    console.error('[HTTP] Generation error:', data.error);
+                    onError?.(data.error);
+                    setIsGenerating(false);
                   }
+                } catch (e) {
+                  console.error('[HTTP] Failed to parse SSE data:', e, line);
                 }
               }
             }
-          } catch (error) {
-            console.error('Stream reading error:', error);
-            onError?.('Stream reading failed');
-            setIsGenerating(false);
           }
-        };
-
-        readStream();
+          
+          // Process any remaining buffer
+          if (buffer.trim() && buffer.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(buffer.slice(6));
+              if (data.type === 'complete') {
+                onComplete?.(data.sessionId, data.totalTokens);
+              }
+            } catch (e) {
+              console.error('Failed to parse final SSE data:', e);
+            }
+          }
+        } catch (error) {
+          console.error('Stream reading error:', error);
+          onError?.(`Stream reading failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        } finally {
+          setIsGenerating(false);
+        }
       }).catch(error => {
         console.error('HTTP generation error:', error);
-        onError?.('HTTP generation failed');
+        onError?.(`Generation failed: ${error instanceof Error ? error.message : 'Connection error'}`);
         setIsGenerating(false);
       });
       
@@ -191,11 +222,21 @@ export function useWebSocket({ url, onToken, onComplete, onError }: UseWebSocket
   }, [onToken, onComplete, onError]);
 
   const stopGeneration = useCallback(() => {
+    console.log('[HTTP] Stopping generation...');
+    
+    // In development mode, we can't actually stop the server stream
+    // but we can stop processing on client side
+    if (import.meta.env.DEV) {
+      setIsGenerating(false);
+      onError?.('Generation stopped by user');
+      return;
+    }
+    
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.close();
     }
     setIsGenerating(false);
-  }, []);
+  }, [onError]);
 
   useEffect(() => {
     connect();

@@ -44,8 +44,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // HTTP fallback endpoint for development mode
   app.post("/api/generate", async (req, res) => {
+    console.log('[API] Generate request received:', { 
+      method: req.method,
+      body: req.body 
+    });
+    
     try {
+      // Validate request
+      if (!req.body) {
+        res.status(400).json({ error: 'No request body provided' });
+        return;
+      }
+      
       const request = generationRequestSchema.parse(req.body);
+      console.log('[API] Validated request:', request);
       
       // Set up Server-Sent Events for streaming
       res.writeHead(200, {
@@ -53,23 +65,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'Cache-Control': 'no-cache',
         'Connection': 'keep-alive',
         'Access-Control-Allow-Origin': '*',
+        'X-Accel-Buffering': 'no' // Disable nginx buffering
       });
 
       const sessionId = `dev-${Date.now()}`;
       let tokenCount = 0;
 
       // Generate tokens using the LLM engine
+      console.log('[API] Starting generation with LLM engine...');
       const generator = llmEngine.generateStream(request);
       
       for await (const tokenResponse of generator) {
         tokenCount++;
-        res.write(`data: ${JSON.stringify({
+        const message = JSON.stringify({
           type: 'token',
           ...tokenResponse
-        })}\n\n`);
+        });
+        res.write(`data: ${message}\n\n`);
+        
+        // Log first few tokens for debugging
+        if (tokenCount <= 3) {
+          console.log(`[API] Sent token ${tokenCount}:`, tokenResponse.token);
+        }
       }
 
       // Send completion event
+      console.log(`[API] Generation complete. Total tokens: ${tokenCount}`);
       res.write(`data: ${JSON.stringify({
         type: 'complete',
         sessionId,
@@ -78,13 +99,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.end();
     } catch (error) {
-      console.error('Generation error:', error);
-      res.write(`data: ${JSON.stringify({
-        type: 'error',
-        error: error instanceof Error ? error.message : 'Generation failed'
-      })}\n\n`);
-      res.end();
+      console.error('[API] Generation error:', error);
+      
+      // If headers not sent yet, send error response
+      if (!res.headersSent) {
+        res.status(500).json({ 
+          error: error instanceof Error ? error.message : 'Generation failed' 
+        });
+      } else {
+        // If streaming already started, send error event
+        res.write(`data: ${JSON.stringify({
+          type: 'error',
+          error: error instanceof Error ? error.message : 'Generation failed'
+        })}\n\n`);
+        res.end();
+      }
     }
+  });
+  
+  // Handle incorrect GET requests to generate endpoint
+  app.get("/api/generate", (req, res) => {
+    res.status(405).json({ 
+      error: 'Method not allowed. Use POST to generate text.' 
+    });
   });
 
   // WebSocket server for real-time text generation
