@@ -456,6 +456,9 @@ def download_model_if_needed():
     """Download model to persistent volume if not already cached"""
     from transformers import AutoModelForCausalLM, AutoTokenizer
     from pathlib import Path
+    import datetime
+    
+    print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] Starting cache check...")
     
     cache_dir = "/cache/models"
     model_id = "openai/gpt-oss-120b"
@@ -463,10 +466,14 @@ def download_model_if_needed():
     # Check if model exists
     cache_path = Path(cache_dir) / "gpt-oss-120b"
     
+    print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] Checking path: {cache_path}")
+    
     if cache_path.exists():
         # Count files to verify complete download
         model_files = list(cache_path.glob("*.safetensors"))
         config_files = list(cache_path.glob("config.json"))
+        
+        print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] Found {len(model_files)} model files, {len(config_files)} config files")
         
         if model_files and config_files:
             return {
@@ -476,19 +483,22 @@ def download_model_if_needed():
             }
     
     # Download model
-    print(f"📥 Downloading {model_id} to cache...")
-    print("This will take 10-15 minutes for 120B model...")
+    print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] 📥 Starting download of {model_id}...")
+    print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] This will take 10-15 minutes for 120B model...")
+    print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] Watch network activity increase now...")
     
     try:
         # Download tokenizer
+        print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] Downloading tokenizer...")
         tokenizer = AutoTokenizer.from_pretrained(
             model_id,
             cache_dir=cache_dir,
             trust_remote_code=True
         )
-        print("✅ Tokenizer downloaded")
+        print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] ✅ Tokenizer downloaded")
         
         # Download model (this triggers the actual download)
+        print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] Downloading model weights (this is the big download)...")
         model = AutoModelForCausalLM.from_pretrained(
             model_id,
             cache_dir=cache_dir,
@@ -500,7 +510,7 @@ def download_model_if_needed():
         # Clean up the loaded model (we just wanted to download)
         del model
         
-        print("✅ Model downloaded successfully")
+        print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] ✅ Model downloaded successfully")
         
         return {
             "status": "downloaded",
@@ -509,6 +519,7 @@ def download_model_if_needed():
         }
         
     except Exception as e:
+        print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] ❌ Error: {str(e)}")
         return {
             "status": "error",
             "message": f"Download failed: {str(e)}"
