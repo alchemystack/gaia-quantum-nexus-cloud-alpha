@@ -4,6 +4,8 @@ version = "0.1.0"
 description = "Add your description here"
 requires-python = ">=3.10"
 dependencies = [
+    "aiohttp>=3.12.15",
     "modal==0.64.0",
     "protobuf==4.25.0",
+    "requests>=2.32.4",
 ]
