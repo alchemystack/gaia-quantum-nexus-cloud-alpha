@@ -181,30 +181,20 @@ export class ModalLLMEngine {
   }
   
   /**
-   * Check if Modal endpoint is configured and reachable
+   * Check if Modal endpoint is configured
    */
   async isConfigured(): Promise<boolean> {
-    if (!this.modalApiKey || !this.modalTokenSecret || !this.modalEndpoint) {
-      return false;
+    // Just check if all credentials are present
+    // Don't try to reach the endpoint as it may not be reachable yet or may not have an /info endpoint
+    const configured = !!(this.modalApiKey && this.modalTokenSecret && this.modalEndpoint);
+    
+    if (configured) {
+      console.log('[ModalLLM] Modal credentials found:');
+      console.log(`  API Key: ${this.modalApiKey.substring(0, 7)}...`);
+      console.log(`  Token Secret: ${this.modalTokenSecret.substring(0, 7)}...`);
+      console.log(`  Endpoint: ${this.modalEndpoint}`);
     }
     
-    try {
-      // Use the same authentication format as generate method
-      const authToken = `${this.modalApiKey}:${this.modalTokenSecret}`;
-      const encodedAuth = Buffer.from(authToken).toString('base64');
-      
-      const response = await fetch(`${this.modalEndpoint}/info`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Basic ${encodedAuth}`
-        }
-      });
-      
-      return response.ok;
-    } catch (error) {
-      console.error('[ModalLLM] Failed to reach Modal endpoint:', error);
-      return false;
-    }
+    return configured;
   }
 }
