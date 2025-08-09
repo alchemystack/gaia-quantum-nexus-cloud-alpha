@@ -133,7 +133,7 @@ export default function QuantumInterface() {
   }, [isGenerating]);
 
   const handleGenerate = () => {
-    if (!prompt.trim() || isGenerating || !isConnected) return;
+    if (!prompt.trim() || isGenerating) return;
 
     // Check if quantum profile is selected but QRNG is unavailable
     if (profile !== 'strict' && !qrngStatus?.available) {
@@ -374,7 +374,7 @@ export default function QuantumInterface() {
                   <div className="flex space-x-2">
                     <Button 
                       onClick={handleGenerate}
-                      disabled={!prompt.trim() || isGenerating || !isConnected || (profile !== 'strict' && !qrngStatus?.available)}
+                      disabled={!prompt.trim() || isGenerating || (profile !== 'strict' && !qrngStatus?.available)}
                       className="bg-gradient-to-r from-quantum-indigo to-quantum-purple hover:from-quantum-purple hover:to-quantum-indigo disabled:from-gray-600 disabled:to-gray-600"
                       data-testid="button-generate"
                     >

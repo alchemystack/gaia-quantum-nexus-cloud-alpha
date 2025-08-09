@@ -14,22 +14,32 @@ export function useWebSocket({ url, onToken, onComplete, onError }: UseWebSocket
   const [isGenerating, setIsGenerating] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
+  const reconnectAttemptsRef = useRef(0);
+  const maxReconnectAttempts = 10;
 
   const connect = useCallback(() => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) return;
+    // Clean up existing connection first
+    if (wsRef.current) {
+      if (wsRef.current.readyState === WebSocket.OPEN) return;
+      wsRef.current.close();
+      wsRef.current = null;
+    }
+    
+    if (isConnecting) return; // Prevent multiple simultaneous connection attempts
     
     setIsConnecting(true);
     
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const wsUrl = `${protocol}//${window.location.host}${url}`;
     
+    console.log('Attempting WebSocket connection to:', wsUrl);
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
     ws.onopen = () => {
       setIsConnected(true);
       setIsConnecting(false);
-      console.log('WebSocket connected');
+      console.log('WebSocket connected successfully');
     };
 
     ws.onmessage = (event) => {
@@ -58,13 +68,14 @@ export function useWebSocket({ url, onToken, onComplete, onError }: UseWebSocket
     };
 
     ws.onclose = (event) => {
+      console.log('WebSocket closed:', event.code, event.reason);
       setIsConnected(false);
       setIsConnecting(false);
       setIsGenerating(false);
       wsRef.current = null;
       
-      // Only attempt to reconnect if it wasn't a clean close
-      if (event.code !== 1000) {
+      // Only reconnect if it wasn't a clean close and not in development mode (to prevent HMR conflicts)
+      if (event.code !== 1000 && !import.meta.env.DEV) {
         reconnectTimeoutRef.current = setTimeout(connect, 5000);
       }
     };
