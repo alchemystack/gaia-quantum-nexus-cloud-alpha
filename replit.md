@@ -43,12 +43,15 @@ Preferred communication style: Simple, everyday language.
 ### Cloud Model Deployment (GPT-OSS 120B GGUF)
 - **Model**: ggml-org/gpt-oss-120b-GGUF from HuggingFace
 - **Model Link**: https://huggingface.co/ggml-org/gpt-oss-120b-GGUF
-- **Running Command**: `llama-server -hf ggml-org/gpt-oss-120b-GGUF -c 0 -fa --jinja --reasoning-format none`
-- **GPU Requirements**: 1x A100 with 64GB RAM
-- **Deployment Scripts**: Modal serverless deployment in `MODAL_WEB_NOTEBOOK.py`
+- **Running Command**: `llama-server -hf ggml-org/gpt-oss-120b-GGUF -c 8192 -fa --jinja --reasoning-format none -t 16`
+- **GPU Requirements**: 1x A100 with 80GB VRAM (enhanced from 64GB)
+- **System Resources**: 128GB RAM, 16 CPU cores (enhanced configuration)
+- **Deployment Scripts**: 
+  - `MODAL_NOTEBOOK_ENHANCED.py` - Cell-based deployment with local upload support
+  - `MODAL_WEB_NOTEBOOK.py` - Original single-script deployment
 - **Integration**: ModalLLMEngine in `server/services/modal-llm-engine.ts`
-- **Low-Latency Setup**: Model stays loaded (keep_warm=1), Flash Attention enabled
-- **Cost Optimization**: Modal at ~$60/month for light usage with 1 GPU vs 2 GPUs
+- **Low-Latency Setup**: Model stays loaded (keep_warm=1), Flash Attention enabled, 16 CPU threads
+- **Cost Optimization**: Enhanced config ~$95-120/month, Original ~$60/month
 
 ### Authentication & Authorization
 - **Current State**: No authentication implemented (demo mode)
