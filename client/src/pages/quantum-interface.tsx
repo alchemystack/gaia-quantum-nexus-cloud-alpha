@@ -40,6 +40,7 @@ export default function QuantumInterface() {
   
   // Generation State  
   const [generatedTokens, setGeneratedTokens] = useState<string[]>([]);
+  const [vectorInterpretationTokens, setVectorInterpretationTokens] = useState<string[]>([]); // Vector interpretation output
   const [tokenCount, setTokenCount] = useState(0);
   const [currentInfluence, setCurrentInfluence] = useState('');
   const [influenceHistory, setInfluenceHistory] = useState<Array<{ time: string; text: string }>>([]);
@@ -65,6 +66,19 @@ export default function QuantumInterface() {
     url: '/ws/generate',
     onToken: (response: TokenResponse) => {
       setGeneratedTokens(prev => [...prev, response.token]);
+      
+      // Parse vector interpretation from influence string
+      // Format: "QRNG Vector: [...] → interpretation"
+      if (response.influence.includes('→')) {
+        const parts = response.influence.split('→');
+        if (parts.length > 1) {
+          const interpretation = parts[1].trim();
+          setVectorInterpretationTokens(prev => [...prev, interpretation]);
+        }
+      } else {
+        setVectorInterpretationTokens(prev => [...prev, response.token]); // Fallback to same token
+      }
+      
       setTokenCount(prev => prev + 1);
       setCurrentInfluence(response.influence);
       setLayerAnalysis(response.layerAnalysis);
@@ -155,8 +169,9 @@ export default function QuantumInterface() {
       return;
     }
 
-    // Reset state
+    // Reset state for both outputs
     setGeneratedTokens([]);
+    setVectorInterpretationTokens([]); // Reset vector interpretation
     setTokenCount(0);
     setCurrentInfluence('');
     setInfluenceHistory([]);
@@ -408,13 +423,13 @@ export default function QuantumInterface() {
               </CardContent>
             </Card>
 
-            {/* Generated Output */}
+            {/* Dual Output Display */}
             <Card className="bg-card border-border" data-testid="output-card">
               <CardHeader>
                 <CardTitle className="text-lg font-semibold flex items-center justify-between text-foreground">
                   <span className="flex items-center">
                     <Terminal className="text-quantum-cyan mr-2 h-5 w-5" />
-                    Generated Output
+                    Dual Output Display
                   </span>
                   <div className="flex items-center space-x-2 text-sm">
                     <span className="text-muted-foreground">Tokens:</span>
@@ -423,24 +438,55 @@ export default function QuantumInterface() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div 
-                  ref={outputRef}
-                  className="bg-background rounded-lg p-4 min-h-[300px] max-h-[400px] overflow-y-auto border border-border font-mono text-sm leading-relaxed"
-                  data-testid="output-container"
-                >
-                  {prompt && (
-                    <div className="text-muted-foreground mb-2" data-testid="prompt-echo">
-                      {prompt}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {/* QRNG-Modified Output */}
+                  <div>
+                    <h4 className="text-sm font-semibold text-quantum-indigo mb-2">QRNG-Modified Output</h4>
+                    <div 
+                      ref={outputRef}
+                      className="bg-background rounded-lg p-4 min-h-[250px] max-h-[350px] overflow-y-auto border border-border font-mono text-sm leading-relaxed"
+                      data-testid="output-container"
+                    >
+                      {prompt && (
+                        <div className="text-muted-foreground mb-2" data-testid="prompt-echo">
+                          {prompt}
+                        </div>
+                      )}
+                      <div className="text-foreground" data-testid="generated-text">
+                        {generatedTokens.join(' ')}
+                      </div>
+                      <span 
+                        ref={cursorRef}
+                        className="inline-block w-2 h-5 bg-quantum-indigo animate-pulse ml-1 opacity-0"
+                        data-testid="cursor"
+                      />
                     </div>
-                  )}
-                  <div className="text-foreground" data-testid="generated-text">
-                    {generatedTokens.join(' ')}
                   </div>
-                  <span 
-                    ref={cursorRef}
-                    className="inline-block w-2 h-5 bg-quantum-indigo animate-pulse ml-1 opacity-0"
-                    data-testid="cursor"
-                  />
+                  
+                  {/* Vector Interpretation Output */}
+                  <div>
+                    <h4 className="text-sm font-semibold text-quantum-purple mb-2">Vector Interpretation (1s-scaled)</h4>
+                    <div 
+                      className="bg-background rounded-lg p-4 min-h-[250px] max-h-[350px] overflow-y-auto border border-border font-mono text-sm leading-relaxed"
+                      data-testid="vector-interpretation-container"
+                    >
+                      {prompt && (
+                        <div className="text-muted-foreground mb-2">
+                          {prompt}
+                        </div>
+                      )}
+                      <div className="text-foreground" data-testid="vector-interpretation-text">
+                        {vectorInterpretationTokens.join(' ')}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Model Limitation Notice */}
+                <div className="mt-4 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                  <p className="text-xs text-yellow-500">
+                    <strong>Note:</strong> This is a demonstration system. Loading a real 120B parameter model requires 240-480GB GPU memory (4-8 A100 GPUs), which is not available in Replit. The system uses a vocabulary-based demonstration to show how QRNG logit modification would work.
+                  </p>
                 </div>
               </CardContent>
             </Card>

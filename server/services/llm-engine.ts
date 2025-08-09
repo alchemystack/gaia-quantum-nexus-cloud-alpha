@@ -59,15 +59,15 @@ export class QuantumLLMEngine {
     
     while (this.tokenCount < maxTokens) {
       try {
-        // All quantum operations MUST succeed or generation stops
-        const token = await this.generateNextToken(profile, temperature);
-        const quantumVector = await this.getQuantumLogitModifier(profile);
+        // Generate both modified token and vector interpretation
+        const { token, vectorInterpretation, rawVector } = await this.generateDualOutput(profile, temperature);
         const layerAnalysis = await this.analyzeLayerActivity(profile);
         const performanceMetrics = this.getPerformanceMetrics();
 
+        // Return both outputs - the QRNG-modified token and the vector interpretation
         yield {
           token,
-          influence: `Vector modifier: [${quantumVector.slice(0, 3).map(v => v.toFixed(3)).join(', ')}...]`,
+          influence: `QRNG Vector: [${rawVector.slice(0, 5).map(v => v.toFixed(3)).join(', ')}...] → ${vectorInterpretation}`,
           layerAnalysis,
           performanceMetrics
         };
@@ -85,10 +85,19 @@ export class QuantumLLMEngine {
     }
   }
 
-  private async generateNextToken(profile: string, temperature: number): Promise<string> {
+  private async generateDualOutput(profile: string, temperature: number): Promise<{
+    token: string;
+    vectorInterpretation: string;
+    rawVector: number[];
+  }> {
     if (profile === 'strict') {
       // Deterministic selection - no QRNG modification
-      return this.vocabulary[this.tokenCount % this.vocabulary.length];
+      const token = this.vocabulary[this.tokenCount % this.vocabulary.length];
+      return {
+        token,
+        vectorInterpretation: 'deterministic',
+        rawVector: [0]
+      };
     }
 
     // Get QRNG vector to modify logits
@@ -123,9 +132,21 @@ export class QuantumLLMEngine {
       }
     }
     
-    this.entropyUsed += vocabSize * 4 + 4; // Track entropy consumption (floats for modifiers + sampling)
-    return this.vocabulary[selectedIndex];
+    // Generate vector interpretation - scale by all 1s and select word
+    const interpretationVector = quantumModifiers.map(v => v * 1); // Scale by 1s as requested
+    const interpretationIndex = Math.abs(Math.floor(interpretationVector.reduce((a, b) => a + b, 0) * 10)) % this.vocabulary.length;
+    const vectorInterpretation = this.vocabulary[interpretationIndex];
+    
+    this.entropyUsed += vocabSize * 4 + 4; // Track entropy consumption
+    
+    return {
+      token: this.vocabulary[selectedIndex],
+      vectorInterpretation,
+      rawVector: quantumModifiers
+    };
   }
+
+
 
   private getModifierStrength(profile: string): number {
     // Controls how much QRNG modifies the logits
