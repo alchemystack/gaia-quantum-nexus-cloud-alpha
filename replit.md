@@ -54,9 +54,11 @@ Preferred communication style: Simple, everyday language.
 - **GPU Requirements**: 1x A100 with 80GB VRAM
 - **System Resources**: 128GB RAM, 16 CPU cores (enhanced configuration)
 - **Deployment Scripts**: 
-  - `MODAL_NOTEBOOK_UPDATED_2025.py` - LATEST: Complete unified deployment (qgpt)
+  - `MODAL_PERFECT_7CELL_NOTEBOOK.py` - PRODUCTION: Perfect 7-cell deployment with full QRNG integration
+  - `MODAL_NOTEBOOK_UPDATED_2025.py` - Previous unified deployment (qgpt)
   - `configure_modal.py` - Configuration helper and endpoint tester
   - `MODAL_DEPLOYMENT_GUIDE.md` - Complete deployment documentation
+  - `test_perfect_notebook.py` - Notebook validation script
 - **Quantum Modification Process**:
   1. Forward pass generates raw logits (shape: [batch_size, vocab_size])
   2. QRNG noise tensor applied directly to logits
