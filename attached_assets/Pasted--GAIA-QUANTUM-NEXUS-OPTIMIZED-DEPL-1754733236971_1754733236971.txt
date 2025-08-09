@@ -1,0 +1,131 @@
+============================================================
+🌌 GAIA QUANTUM NEXUS - OPTIMIZED DEPLOYMENT
+============================================================
+---------------------------------------------------------------------------
+InvalidError                              Traceback (most recent call last)
+Cell In[16], line 8
+      4 """
+      5 Execute this cell to deploy the model
+      6 """
+      7 # Run the deployment
+----> 8 deployment_name = deploy()
+     10 print(f"\n✨ Deployment '{deployment_name}' is ready!")
+
+Cell In[15], line 11, in deploy()
+      8 print("=" * 60)
+     10 # Run with Modal app context (required for notebooks)
+---> 11 with app.run():
+     12     # Step 1: Ensure model is downloaded to volume
+     13     print("\n📦 Step 1: Checking model cache...")
+     14     try:
+
+File /usr/local/lib/python3.12/contextlib.py:210, in _AsyncGeneratorContextManager.__aenter__(self)
+    208 del self.args, self.kwds, self.func
+    209 try:
+--> 210     return await anext(self.gen)
+    211 except StopAsyncIteration:
+    212     raise RuntimeError("generator didn't yield") from None
+
+File /usr/local/lib/python3.12/site-packages/modal/app.py:364, in _App.run(self, client, detach, interactive, environment_name)
+    323 """Context manager that runs an ephemeral app on Modal.
+    324 
+    325 Use this as the main entry point for your Modal application. All calls
+   (...)    360 
+    361 """
+    362 from .runner import _run_app  # Defer import of runner.py, which imports a lot from Rich
+--> 364 async with _run_app(
+    365     self, client=client, detach=detach, interactive=interactive, environment_name=environment_name
+    366 ):
+    367     yield self
+
+File /usr/local/lib/python3.12/contextlib.py:210, in _AsyncGeneratorContextManager.__aenter__(self)
+    208 del self.args, self.kwds, self.func
+    209 try:
+--> 210     return await anext(self.gen)
+    211 except StopAsyncIteration:
+    212     raise RuntimeError("generator didn't yield") from None
+
+File /usr/local/lib/python3.12/site-packages/modal/runner.py:340, in _run_app(app, client, detach, environment_name, interactive)
+    334     logs_loop = tc.create_task(
+    335         get_app_logs_loop(client, output_mgr, app_id=running_app.app_id, app_logs_url=running_app.app_logs_url)
+    336     )
+    338 try:
+    339     # Create all members
+--> 340     await _create_all_objects(client, running_app, app._functions, app._classes, environment_name)
+    342     # Publish the app
+    343     await _publish_app(client, running_app, app_state, app._functions, app._classes)
+
+File /usr/local/lib/python3.12/site-packages/modal/runner.py:177, in _create_all_objects(client, running_app, functions, classes, environment_name)
+    174     else:
+    175         raise RuntimeError(f"Unexpected object {obj.object_id}")
+--> 177 await TaskContext.gather(*(_load(tag, obj) for tag, obj in indexed_objects.items()))
+
+File /usr/local/lib/python3.12/site-packages/modal/_utils/async_utils.py:257, in TaskContext.gather(*coros)
+    228 """Wait for a sequence of coroutines to finish, concurrently.
+    229 
+    230 This is similar to `asyncio.gather()`, but it uses TaskContext to cancel all remaining tasks
+   (...)    254 ```
+    255 """
+    256 async with TaskContext() as tc:
+--> 257     results = await asyncio.gather(*(tc.create_task(coro) for coro in coros))
+    258 return results
+
+File /usr/local/lib/python3.12/site-packages/modal/runner.py:169, in _create_all_objects.<locals>._load(tag, obj)
+    167 async def _load(tag, obj):
+    168     existing_object_id = tag_to_object_id.get(tag)
+--> 169     await resolver.load(obj, existing_object_id)
+    170     if _Function._is_id_type(obj.object_id):
+    171         running_app.function_ids[tag] = obj.object_id
+
+File /usr/local/lib/python3.12/site-packages/modal/_functions.py:813, in _Function.from_local.<locals>._load(self, resolver, existing_object_id)
+    811 async def _load(self: _Function, resolver: Resolver, existing_object_id: Optional[str]):
+    812     assert resolver.client and resolver.client.stub
+--> 813     with FunctionCreationStatus(resolver, tag) as function_creation_status:
+    814         timeout_secs = timeout
+    816         if app and app.is_interactive and not is_builder_function:
+
+File /usr/local/lib/python3.12/site-packages/modal/_utils/function_utils.py:619, in FunctionCreationStatus.__exit__(self, exc_type, exc_val, exc_tb)
+    617 def __exit__(self, exc_type, exc_val, exc_tb):
+    618     if exc_type:
+--> 619         raise exc_val
+    621     if not self.response:
+    622         self.status_row.finish(f"Unknown error when creating function {self.tag}")
+
+File /usr/local/lib/python3.12/site-packages/modal/_functions.py:825, in _Function.from_local.<locals>._load(self, resolver, existing_object_id)
+    819     pty_info = None
+    821 if info.is_serialized():
+    822     # Use cloudpickle. Used when working w/ Jupyter notebooks.
+    823     # serialize at _load time, not function decoration time
+    824     # otherwise we can't capture a surrounding class for lifetime methods etc.
+--> 825     function_serialized = info.serialized_function()
+    826     class_serialized = serialize(info.user_cls) if info.user_cls is not None else None
+    827     # Ensure that large data in global variables does not blow up the gRPC payload,
+    828     # which has maximum size 100 MiB. We set the limit lower for performance reasons.
+
+File /usr/local/lib/python3.12/site-packages/modal/_utils/function_utils.py:236, in FunctionInfo.serialized_function(self)
+    234 assert self.is_serialized()
+    235 if self.raw_f:
+--> 236     serialized_bytes = serialize(self.raw_f)
+    237     logger.debug(f"Serializing {self.raw_f.__qualname__}, size is {len(serialized_bytes)}")
+    238     return serialized_bytes
+
+File /usr/local/lib/python3.12/site-packages/modal/_serialization.py:95, in serialize(obj)
+     93 """Serializes object and replaces all references to the client class by a placeholder."""
+     94 buf = io.BytesIO()
+---> 95 Pickler(buf).dump(obj)
+     96 return buf.getvalue()
+
+File /usr/local/lib/python3.12/site-packages/modal/_vendor/cloudpickle.py:1227, in Pickler.dump(self, obj)
+   1225 def dump(self, obj):
+   1226     try:
+-> 1227         return super().dump(obj)
+   1228     except RuntimeError as e:
+   1229         if len(e.args) > 0 and "recursion" in e.args[0]:
+
+File /usr/local/lib/python3.12/site-packages/modal/_serialization.py:60, in Pickler.persistent_id(self, obj)
+     58     return
+     59 if not obj.is_hydrated:
+---> 60     raise InvalidError(f"Can't serialize object {obj} which hasn't been hydrated.")
+     61 return (obj.object_id, flag, obj._get_metadata())
+
+InvalidError: Can't serialize object Cls(QuantumGPT120BTransformers) which hasn't been hydrated.
