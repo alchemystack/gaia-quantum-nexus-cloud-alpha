@@ -3,7 +3,7 @@
 MODAL NOTEBOOK: GAIA QUANTUM NEXUS - COMPLETE DEPLOYMENT (2025)
 ================================================================
 Copy each cell into Modal notebook and run in sequence.
-This will deploy GPT-OSS 120B with QRNG logit modification.
+This will deploy OpenAI OSS 120B with QRNG logit modification.
 
 ARCHITECTURE:
 - Replit: Frontend, UI, QRNG API interface
@@ -58,9 +58,9 @@ print("✅ Modal app initialized with name 'qgpt'")
     memory=131072,  # 128GB RAM
     cpu=16,  # 16 cores
 )
-class QuantumGPT:
+class QuantumModel:
     """
-    GPT-OSS 120B with direct QRNG logit modification using transformers.
+    OpenAI OSS 120B with direct QRNG logit modification using transformers.
     This gives us FULL control over the raw logits before sampling.
     """
     
@@ -270,7 +270,7 @@ class QuantumGPT:
             "temperature": temperature
         }
 
-print("✅ QuantumGPT class defined with transformers integration")
+print("✅ QuantumModel class defined with transformers integration")
 
 # ============================================
 # CELL 3: WEB ENDPOINTS
@@ -287,7 +287,7 @@ def health() -> Dict[str, Any]:
     """Simple health check endpoint"""
     return {
         "status": "healthy",
-        "service": "Quantum GPT API",
+        "service": "Quantum Model API",
         "endpoints": {
             "health": "/health",
             "generate": "/generate"
@@ -304,7 +304,7 @@ def health() -> Dict[str, Any]:
 def generate(request: Dict[str, Any]) -> Dict[str, Any]:
     """
     Main generation endpoint with authentication.
-    Delegates to QuantumGPT class for actual generation.
+    Delegates to QuantumModel class for actual generation.
     """
     import base64
     import os
@@ -341,8 +341,8 @@ def generate(request: Dict[str, Any]) -> Dict[str, Any]:
     
     # Call the model
     try:
-        quantum_gpt = QuantumGPT()
-        result = quantum_gpt.generate.remote(
+        quantum_model = QuantumModel()
+        result = quantum_model.generate.remote(
             prompt=prompt,
             max_tokens=max_tokens,
             temperature=temperature,
@@ -403,19 +403,19 @@ print("✅ Authentication setup helper ready")
 @app.local_entrypoint()
 def deploy():
     """
-    Deploy the complete Quantum GPT system to Modal.
+    Deploy the complete Quantum Model system to Modal.
     This will give you the actual endpoint URLs.
     """
     import time
     
     print("\n" + "="*60)
-    print("🚀 DEPLOYING QUANTUM GPT TO MODAL")
+    print("🚀 DEPLOYING QUANTUM MODEL TO MODAL")
     print("="*60)
     
     # Test the model class
     print("\n📊 Testing model initialization...")
-    quantum_gpt = QuantumGPT()
-    health_check = quantum_gpt.health.remote()
+    quantum_model = QuantumModel()
+    health_check = quantum_model.health.remote()
     print(f"✅ Model health: {health_check}")
     
     # Get the app name and user
@@ -434,7 +434,7 @@ def deploy():
     print("\nIMPORTANT NEXT STEPS:")
     print("1. Copy the Generate endpoint URL above")
     print("2. Update MODAL_ENDPOINT in Replit with this URL")
-    print("3. Your Quantum GPT system will be ready!")
+    print("3. Your Quantum Model system will be ready!")
     print("="*60 + "\n")
 
 print("✅ Deployment function ready")

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Modal Configuration Helper for Quantum GPT (qgpt)
-This script helps configure and validate Modal endpoints for the Quantum GPT system.
+Modal Configuration Helper for Quantum Model (qgpt)
+This script helps configure and validate Modal endpoints for the Quantum Model system.
 """
 
 import os
@@ -113,7 +113,7 @@ def test_generate_endpoint() -> bool:
 def display_configuration():
     """Display the current configuration"""
     print("\n" + "="*60)
-    print("QUANTUM GPT (qgpt) CONFIGURATION")
+    print("QUANTUM MODEL (qgpt) CONFIGURATION")
     print("="*60)
     
     print("\n📍 Expected Modal Endpoints:")
@@ -200,7 +200,7 @@ def main():
         generate_ok = test_generate_endpoint()
         
         if generate_ok:
-            print("\n✅ All tests passed! Quantum GPT is ready to use!")
+            print("\n✅ All tests passed! Quantum Model is ready to use!")
         else:
             print("\n⚠️  Generation test failed")
             print("   Check authentication credentials and Modal logs")

@@ -1,7 +1,7 @@
-# Complete Modal Deployment Guide for Quantum GPT
+# Complete Modal Deployment Guide for Quantum Model (qgpt)
 
 ## Overview
-This guide provides the complete, unified process for deploying the Gaia Quantum Nexus Cloud system with OpenAI GPT-OSS 120B model on Modal, with full integration to the Replit frontend.
+This guide provides the complete, unified process for deploying the Gaia Quantum Nexus Cloud system with OpenAI OSS 120B model on Modal, with full integration to the Replit frontend.
 
 ## Architecture
 - **Modal**: Handles ALL LLM inference, transformers, and QRNG logit modification

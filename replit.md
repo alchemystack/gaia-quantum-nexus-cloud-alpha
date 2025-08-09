@@ -40,8 +40,8 @@ Preferred communication style: Simple, everyday language.
 - **Dual Output**: Shows both QRNG-modified text and vector interpretation
 - **Layer Analysis**: Real-time monitoring of attention, FFN, and embedding layers
 
-### Cloud Model Deployment (OpenAI GPT-OSS 120B with Transformers)
-- **Model**: OpenAI GPT-OSS 120B (official release from OpenAI)
+### Cloud Model Deployment (OpenAI OSS 120B with Transformers)
+- **Model**: OpenAI OSS 120B (official release from OpenAI)
 - **Framework**: Transformers library for DIRECT LOGIT MODIFICATION
 - **Model Stats**: 117B parameters total, 5.1B active parameters
 - **Quantization**: 8-bit quantization to fit in 80GB VRAM
