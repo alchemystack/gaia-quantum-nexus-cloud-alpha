@@ -5,18 +5,20 @@ Copy this entire code into Modal's web playground at:
 https://modal.com/playground
 
 This will deploy the GPT-OSS 120B model with quantum enhancement!
+After running, you'll get endpoints to use in Replit.
 """
 
 import modal
 import os
 import time
 from typing import Dict, Any, Optional
+import json
 
 # Create Modal app
 app = modal.App("gaia-quantum-120b")
 
-# GPU configuration
-gpu_config = modal.gpu.A100(count=2, memory=80)
+# GPU configuration - 2x A100 80GB GPUs
+gpu_config = modal.gpu.A100(count=2)
 
 # Model storage
 volume = modal.Volume.from_name("gaia-quantum-models", create_if_missing=True)
@@ -65,41 +67,43 @@ class QuantumGPT120B:
         prompt: str,
         max_tokens: int = 128,
         temperature: float = 0.7,
-        profile: str = "medium"
+        profile: str = "medium",
+        qrng_modifiers: list = None
     ) -> Dict[str, Any]:
         """Generate text with quantum modification"""
         import numpy as np
         import aiohttp
         
-        # Get QRNG data if API key provided
-        qrng_data = None
-        qrng_api_key = os.environ.get("QRNG_API_KEY")
-        
-        if qrng_api_key and profile != "strict":
-            try:
-                headers = {
-                    "Authorization": f"Bearer {qrng_api_key}",
-                    "Content-Type": "application/json"
-                }
-                payload = {
-                    "size": 256,
-                    "format": "float",
-                    "min": -1.0,
-                    "max": 1.0
-                }
-                
-                async with aiohttp.ClientSession() as session:
-                    async with session.post(
-                        "https://qrng.qblockchains.com/api/v1/rng",
-                        json=payload,
-                        headers=headers,
-                        timeout=aiohttp.ClientTimeout(total=10)
-                    ) as response:
-                        if response.status == 200:
-                            data = await response.json()
-                            qrng_data = data.get("data", [])
-            except:
-                pass
+        # Get QRNG data if not provided
+        qrng_data = qrng_modifiers
+        if not qrng_data and profile != "strict":
+            qrng_api_key = os.environ.get("QRNG_API_KEY")
+            
+            if qrng_api_key:
+                try:
+                    headers = {
+                        "Authorization": f"Bearer {qrng_api_key}",
+                        "Content-Type": "application/json"
+                    }
+                    payload = {
+                        "size": 256,
+                        "format": "float",
+                        "min": -1.0,
+                        "max": 1.0
+                    }
+                    
+                    async with aiohttp.ClientSession() as session:
+                        async with session.post(
+                            "https://qrng.qblockchains.com/api/v1/rng",
+                            json=payload,
+                            headers=headers,
+                            timeout=aiohttp.ClientTimeout(total=10)
+                        ) as response:
+                            if response.status == 200:
+                                data = await response.json()
+                                qrng_data = data.get("data", [])
+                except:
+                    pass
         
         # Simulate generation with quantum influence
         quantum_influence = {
@@ -156,7 +160,8 @@ class QuantumGPT120B:
             prompt=prompt,
             max_tokens=request.get("max_tokens", 128),
             temperature=request.get("temperature", 0.7),
-            profile=request.get("profile", "medium")
+            profile=request.get("profile", "medium"),
+            qrng_modifiers=request.get("qrng_modifiers", None)
         )
     
     @modal.web_endpoint(method="GET")

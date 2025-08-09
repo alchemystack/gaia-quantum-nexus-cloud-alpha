@@ -64,19 +64,18 @@ export class ModalLLMEngine {
     this.entropyUsed += qrngBatchSize * 4;
     
     // Call Modal endpoint for generation
-    const response = await fetch(`${this.modalEndpoint}/generate`, {
+    const response = await fetch(this.modalEndpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${this.modalApiKey}`
       },
       body: JSON.stringify({
-        api_key: this.modalApiKey,
         prompt,
         qrng_modifiers: qrngModifiers,
         max_tokens: maxTokens,
         temperature,
-        sampling_method: this.getSamplingMethod(profile),
-        stream: true
+        profile
       })
     });
     
@@ -84,53 +83,37 @@ export class ModalLLMEngine {
       throw new Error(`Modal API error: ${response.status} ${response.statusText}`);
     }
     
-    // Stream tokens from Modal
-    const reader = response.body?.getReader();
-    if (!reader) {
-      throw new Error('No response body from Modal');
+    // Get the full response from Modal
+    const result = await response.json();
+    
+    if (result.error) {
+      throw new Error(`Modal error: ${result.error}`);
     }
     
-    const decoder = new TextDecoder();
-    let buffer = '';
+    // Process the generated text and simulate streaming
+    const generatedText = result.generated_text || '';
+    const tokens = generatedText.split(' ');
+    const layerMetrics = result.layer_analysis || [];
     
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
+    // Yield tokens one by one to simulate streaming
+    for (let i = 0; i < tokens.length; i++) {
+      this.tokenCount++;
+      const token = tokens[i];
       
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
-      buffer = lines.pop() || '';
+      // Generate vector interpretation
+      const vectorInterpretation = this.interpretQRNGVector(
+        qrngModifiers[i % qrngModifiers.length]
+      );
       
-      for (const line of lines) {
-        if (line.trim() === '') continue;
-        
-        if (line.startsWith('data: ')) {
-          try {
-            const data = JSON.parse(line.slice(6));
-            
-            if (data.token) {
-              this.tokenCount++;
-              
-              // Generate vector interpretation
-              const vectorInterpretation = this.interpretQRNGVector(
-                data.qrng_influence || qrngModifiers[this.tokenCount % qrngModifiers.length]
-              );
-              
-              yield {
-                token: data.token,
-                influence: `QRNG Vector: [${qrngModifiers.slice(0, 5).map(v => v.toFixed(3)).join(', ')}...] → ${vectorInterpretation}`,
-                layerAnalysis: this.generateLayerAnalysis(data.qrng_influence || 0),
-                performanceMetrics: this.getPerformanceMetrics()
-              };
-              
-              // Add small delay for streaming effect
-              await new Promise(resolve => setTimeout(resolve, 50));
-            }
-          } catch (e) {
-            console.error('[ModalLLM] Failed to parse streaming data:', e);
-          }
-        }
-      }
+      yield {
+        token: token + (i < tokens.length - 1 ? ' ' : ''),
+        influence: `QRNG Vector: [${qrngModifiers.slice(0, 5).map(v => v.toFixed(3)).join(', ')}...] → ${vectorInterpretation}`,
+        layerAnalysis: layerMetrics[i] || this.generateLayerAnalysis(qrngModifiers[i % qrngModifiers.length]),
+        performanceMetrics: this.getPerformanceMetrics()
+      };
+      
+      // Add small delay to simulate streaming
+      await new Promise(resolve => setTimeout(resolve, 30));
     }
   }
   
