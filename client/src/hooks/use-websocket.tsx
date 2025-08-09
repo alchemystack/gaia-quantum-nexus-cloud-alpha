@@ -57,20 +57,22 @@ export function useWebSocket({ url, onToken, onComplete, onError }: UseWebSocket
       }
     };
 
-    ws.onclose = () => {
+    ws.onclose = (event) => {
       setIsConnected(false);
       setIsConnecting(false);
       setIsGenerating(false);
       wsRef.current = null;
       
-      // Attempt to reconnect after 3 seconds
-      reconnectTimeoutRef.current = setTimeout(connect, 3000);
+      // Only attempt to reconnect if it wasn't a clean close
+      if (event.code !== 1000) {
+        reconnectTimeoutRef.current = setTimeout(connect, 5000);
+      }
     };
 
     ws.onerror = (error) => {
       console.error('WebSocket error:', error);
       setIsConnecting(false);
-      onError?.('Connection error');
+      // Don't call onError for connection errors to prevent popup spam
     };
   }, [url, onToken, onComplete, onError]);
 

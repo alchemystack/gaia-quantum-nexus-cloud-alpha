@@ -83,17 +83,20 @@ export class QuantumBlockchainsQRNG implements QRNGProvider {
 
   private async startEntropyPooling(): Promise<void> {
     if (this.isPooling) return;
-    this.isPooling = true;
 
     const poolEntropy = async () => {
       try {
-        if (this.entropyPool.length < this.poolSize / 4) {
+        if (!this.isPooling && this.entropyPool.length < this.poolSize / 4) {
+          this.isPooling = true;
+          console.log(`[QRNG] Starting entropy pooling, current pool size: ${this.entropyPool.length}`);
+          
           // Request binary data for pooling
           const endpoint = `/${this.apiKey}/qbck/block/bin?size=10&length=256`; // 256 bits = 32 bytes each
           const response = await this.makeRequest(endpoint);
           
-          if (response.result && Array.isArray(response.result)) {
-            response.result.forEach((binaryString: string) => {
+          if (response.data && response.data.result && Array.isArray(response.data.result)) {
+            console.log(`[QRNG] Adding ${response.data.result.length} entropy blocks to pool`);
+            response.data.result.forEach((binaryString: string) => {
               // Convert binary string to buffer
               const bytes: number[] = [];
               for (let i = 0; i < binaryString.length; i += 8) {
@@ -103,10 +106,16 @@ export class QuantumBlockchainsQRNG implements QRNGProvider {
               const buffer = Buffer.from(bytes);
               this.entropyPool.push(buffer);
             });
+            console.log(`[QRNG] Entropy pool now has ${this.entropyPool.length} blocks (${this.getEntropyPoolStatus().percentage.toFixed(1)}%)`);
+          } else {
+            console.warn('[QRNG] Invalid response format for entropy pooling:', response);
           }
+          
+          this.isPooling = false;
         }
       } catch (error) {
-        console.warn('Entropy pooling failed:', error);
+        console.warn('[QRNG] Entropy pooling failed:', error);
+        this.isPooling = false;
       }
       
       // Continue pooling every 5 seconds
@@ -140,9 +149,9 @@ export class QuantumBlockchainsQRNG implements QRNGProvider {
     const endpoint = `/${this.apiKey}/qbck/block/bin?size=1&length=${length * 8}`; // 8 bits per byte
     const response = await this.makeRequest(endpoint);
     
-    if (response.result && response.result[0]) {
+    if (response.data && response.data.result && response.data.result[0]) {
       // Convert binary string to buffer
-      const binaryString = response.result[0];
+      const binaryString = response.data.result[0];
       const bytes: number[] = [];
       for (let i = 0; i < binaryString.length; i += 8) {
         const byte = binaryString.slice(i, i + 8);
@@ -162,8 +171,8 @@ export class QuantumBlockchainsQRNG implements QRNGProvider {
     const endpoint = `/${this.apiKey}/qbck/block/int?size=${count}&min=${min}&max=${max}`;
     const response = await this.makeRequest(endpoint);
     
-    if (response.result && Array.isArray(response.result)) {
-      return response.result;
+    if (response.data && response.data.result && Array.isArray(response.data.result)) {
+      return response.data.result;
     }
     
     throw new Error('No quantum data received from QRNG API - true randomness required');
@@ -177,8 +186,8 @@ export class QuantumBlockchainsQRNG implements QRNGProvider {
     const endpoint = `/${this.apiKey}/qbck/block/double?size=${count}&min=${min}&max=${max}`;
     const response = await this.makeRequest(endpoint);
     
-    if (response.result && Array.isArray(response.result)) {
-      return response.result;
+    if (response.data && response.data.result && Array.isArray(response.data.result)) {
+      return response.data.result;
     }
     
     throw new Error('No quantum data received from QRNG API - true randomness required');
@@ -189,9 +198,10 @@ export class QuantumBlockchainsQRNG implements QRNGProvider {
     
     try {
       const endpoint = `/${this.apiKey}/qbck/block/int?size=1&min=0&max=1`;
-      await this.makeRequest(endpoint);
-      return true;
+      const response = await this.makeRequest(endpoint);
+      return !!(response.data && response.data.result);
     } catch (error) {
+      console.warn('[QRNG] Availability check failed:', error);
       return false;
     }
   }
