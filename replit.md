@@ -50,8 +50,8 @@ Preferred communication style: Simple, everyday language.
 - **GPU Requirements**: 1x A100 with 80GB VRAM
 - **System Resources**: 128GB RAM, 16 CPU cores (enhanced configuration)
 - **Deployment Scripts**: 
-  - `MODAL_TRANSFORMERS_QUANTUM.py` - NEW: Transformers-based deployment with direct logit control
-  - `MODAL_NOTEBOOK_ENHANCED.py` - Legacy llama.cpp deployment (no logit access)
+  - `MODAL_NOTEBOOK_COMPLETE_2025.py` - LATEST: Complete 7-cell notebook with all fixes (January 2025)
+  - `MODAL_TRANSFORMERS_OPTIMIZED.py` - Production deployment script with optimizations
   - `CONNECT_MODAL_AUTO.py` - Automated connection script for Modal endpoints
 - **Quantum Modification Process**:
   1. Forward pass generates raw logits (shape: [batch_size, vocab_size])
