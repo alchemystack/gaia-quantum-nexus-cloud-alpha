@@ -23,13 +23,25 @@ def test_modal_endpoints():
         print("   Please set: MODAL_API_KEY, MODAL_TOKEN_SECRET, MODAL_ENDPOINT")
         return False
     
-    # Extract base URL (remove /generate if present)
-    if endpoint_base.endswith("/generate"):
-        endpoint_base = endpoint_base[:-9]
+    # For qgpt app, the URLs are simple:
+    # https://qgpt--health.modal.run
+    # https://qgpt--generate.modal.run
     
-    # Construct endpoint URLs
-    health_url = endpoint_base.replace("--generate", "--health")
-    generate_url = endpoint_base if "--generate" in endpoint_base else f"{endpoint_base}--generate"
+    # Extract base URL and construct endpoints
+    if "--generate" in endpoint_base:
+        health_url = endpoint_base.replace("--generate", "--health")
+        generate_url = endpoint_base
+    elif "qgpt" in endpoint_base:
+        # Handle if just the base URL is provided
+        base = endpoint_base.rstrip("/")
+        if not base.endswith(".modal.run"):
+            base = "https://qgpt.modal.run"
+        health_url = base.replace(".modal.run", "--health.modal.run")
+        generate_url = base.replace(".modal.run", "--generate.modal.run")
+    else:
+        # Default to qgpt endpoints
+        health_url = "https://qgpt--health.modal.run"
+        generate_url = "https://qgpt--generate.modal.run"
     
     print("🔍 Testing Modal endpoints...")
     print(f"   Health: {health_url}")

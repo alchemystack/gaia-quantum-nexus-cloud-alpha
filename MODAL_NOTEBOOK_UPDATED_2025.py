@@ -309,8 +309,11 @@ def generate(request: Dict[str, Any]) -> Dict[str, Any]:
     import base64
     import os
     
+    # Extract headers from Modal request format
+    headers = request.get("headers", {})
+    auth_header = headers.get("authorization", "") or headers.get("Authorization", "")
+    
     # Check authentication
-    auth_header = request.get("headers", {}).get("authorization", "")
     if auth_header.startswith("Basic "):
         try:
             decoded = base64.b64decode(auth_header[6:]).decode()
@@ -321,10 +324,10 @@ def generate(request: Dict[str, Any]) -> Dict[str, Any]:
             
             if provided_key != expected_key or provided_secret != expected_secret:
                 return {"error": "Invalid authentication", "status": "error"}
-        except Exception:
-            return {"error": "Invalid authentication format", "status": "error"}
+        except Exception as e:
+            return {"error": f"Invalid authentication format: {str(e)}", "status": "error"}
     else:
-        return {"error": "Authentication required", "status": "error"}
+        return {"error": "Authentication required (use Basic auth)", "status": "error"}
     
     # Extract parameters
     body = request.get("body", {})

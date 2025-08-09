@@ -46,13 +46,17 @@ Preferred communication style: Simple, everyday language.
 - **Model Stats**: 117B parameters total, 5.1B active parameters
 - **Quantization**: 8-bit quantization to fit in 80GB VRAM
 - **License**: Apache 2.0
+- **Modal App Name**: `qgpt` (unified short name for compact URLs)
+- **Modal Endpoints** (after deployment):
+  - Health: `https://qgpt--health.modal.run`
+  - Generate: `https://qgpt--generate.modal.run`
 - **Critical Feature**: Direct access to raw logits for QRNG modification BEFORE sampling
 - **GPU Requirements**: 1x A100 with 80GB VRAM
 - **System Resources**: 128GB RAM, 16 CPU cores (enhanced configuration)
 - **Deployment Scripts**: 
-  - `MODAL_NOTEBOOK_COMPLETE_2025.py` - LATEST: Complete 7-cell notebook with all fixes (January 2025)
-  - `MODAL_TRANSFORMERS_OPTIMIZED.py` - Production deployment script with optimizations
-  - `CONNECT_MODAL_AUTO.py` - Automated connection script for Modal endpoints
+  - `MODAL_NOTEBOOK_UPDATED_2025.py` - LATEST: Complete unified deployment (qgpt)
+  - `configure_modal.py` - Configuration helper and endpoint tester
+  - `MODAL_DEPLOYMENT_GUIDE.md` - Complete deployment documentation
 - **Quantum Modification Process**:
   1. Forward pass generates raw logits (shape: [batch_size, vocab_size])
   2. QRNG noise tensor applied directly to logits
@@ -64,7 +68,7 @@ Preferred communication style: Simple, everyday language.
   - `medium`: 30% quantum influence (balanced)
   - `spicy`: 50% quantum influence (strong)
   - `chaos`: 80% quantum influence (maximum)
-- **Integration**: ModalLLMEngine updated to use transformers endpoints
+- **Integration**: ModalLLMEngine connects to qgpt endpoints with Basic auth
 - **Low-Latency Setup**: Model stays loaded (keep_warm=1), 8-bit quantization
 - **Cost Optimization**: ~$95-120/month for 24/7 availability
 
